@@ -1,180 +1,589 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alex Kumar — Creative Developer & Designer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
-    body { background-color: hsl(0,0%,4%); color: hsl(36,27%,93%); font-family: "DM Sans", sans-serif; -webkit-font-smoothing: antialiased; }
-    h1,h2,h3,h4,h5,h6 { font-family: "Playfair Display", serif; }
-    .text-gradient { background: linear-gradient(135deg, #D4A843 0%, #F5D78E 50%, #D4A843 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .grid-bg { background-image: linear-gradient(to right, rgba(128,128,128,0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(128,128,128,0.07) 1px, transparent 1px); background-size: 24px 24px; }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: hsl(0,0%,4%); }
-    ::-webkit-scrollbar-thumb { background: hsl(0,0%,20%); border-radius: 9999px; }
-    .fade-up { opacity: 0; transform: translateY(30px); transition: opacity 0.7s cubic-bezier(0.21,0.47,0.32,0.98), transform 0.7s cubic-bezier(0.21,0.47,0.32,0.98); }
-    .fade-up.visible { opacity: 1; transform: translateY(0); }
-    .fade-left { opacity: 0; transform: translateX(30px); transition: opacity 0.7s cubic-bezier(0.21,0.47,0.32,0.98), transform 0.7s cubic-bezier(0.21,0.47,0.32,0.98); }
-    .fade-left.visible { opacity: 1; transform: translateX(0); }
-    .delay-1 { transition-delay: 0.1s; } .delay-2 { transition-delay: 0.2s; } .delay-3 { transition-delay: 0.3s; } .delay-4 { transition-delay: 0.4s; } .delay-5 { transition-delay: 0.5s; } .delay-6 { transition-delay: 0.6s; }
-    @keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }
-    .animate-ping { animation: ping 1s cubic-bezier(0,0,0.2,1) infinite; }
-    .nav-link { position: relative; }
-    .nav-link::after { content: ""; position: absolute; bottom: -6px; left: 0; height: 1px; width: 0; background: hsl(38,65%,55%); transition: width 0.3s ease; }
-    .nav-link:hover::after { width: 100%; }
-    .project-row { position: relative; }
-    .project-row::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: hsl(38,65%,55%); transform: scaleY(0); transform-origin: top; transition: transform 0.4s ease; }
-    .project-row:hover::before { transform: scaleY(1); }
-    .bento-tile .hover-fill { position: absolute; inset: 0; background: rgba(212,168,67,0.05); transform: translateY(100%); transition: transform 0.5s ease; }
-    .bento-tile:hover .hover-fill { transform: translateY(0); }
-    .input-line { position: absolute; bottom: 0; left: 0; height: 1px; width: 0; background: hsl(38,65%,55%); transition: width 0.3s ease; }
-    .contact-input:focus + .input-line { width: 100%; }
-    .timeline-dot { width: 16px; height: 16px; border-radius: 9999px; background: hsl(0,0%,4%); border: 1px solid hsl(38,65%,55%); transition: background 0.3s; }
-    .timeline-entry:hover .timeline-dot { background: hsl(38,65%,55%); }
-    .arrow-btn { width: 64px; height: 64px; border-radius: 9999px; border: 1px solid hsl(0,0%,15%); display: flex; align-items: center; justify-content: center; transition: background 0.3s, border-color 0.3s, color 0.3s; }
-    .project-row:hover .arrow-btn { background: hsl(38,65%,55%); border-color: hsl(38,65%,55%); color: hsl(0,0%,4%); }
-    .social-btn { width: 56px; height: 56px; border-radius: 9999px; border: 1px solid hsl(0,0%,15%); display: flex; align-items: center; justify-content: center; color: hsl(36,27%,93%); transition: background 0.3s, border-color 0.3s, color 0.3s; text-decoration: none; }
-    .social-btn:hover { background: hsl(38,65%,55%); border-color: hsl(38,65%,55%); color: hsl(0,0%,4%); }
-    @media (max-width: 768px) {
-      .hero-grid { flex-direction: column !important; }
-      .hero-right { display: none !important; }
-      .project-grid { grid-template-columns: 1fr !important; }
-      .exp-grid { grid-template-columns: 1fr !important; }
-      .bento-grid { grid-template-columns: 1fr 1fr !important; }
-      .bento-wide { grid-column: span 2 !important; }
-      .bento-tall { grid-row: span 1 !important; }
-      .about-grid { grid-template-columns: 1fr !important; }
-      .contact-grid { grid-template-columns: 1fr !important; }
-      .what-grid { grid-template-columns: 1fr !important; }
-      .stats-row { gap: 24px !important; }
-      .section-pad { padding: 80px 24px !important; }
-      .nav-desktop { display: none !important; }
-      .nav-mobile-btn { display: block !important; }
-      .footer-inner { flex-direction: column !important; align-items: center; text-align: center; }
-      .exp-layout { flex-direction: column !important; gap: 48px !important; }
-    }
-  </style>
-</head>
-<body>
+================================================================
+PERSONAL WEBSITE - PURA CODE
+================================================================
+Ye files apne project mein is structure mein rakhein:
 
-<!-- NAVBAR -->
-<header id="navbar" style="position:fixed;top:0;left:0;right:0;z-index:50;padding:24px 0;transition:all 0.5s;">
-  <div style="max-width:1400px;margin:0 auto;padding:0 40px;display:flex;align-items:center;justify-content:space-between;">
-    <a href="#home" style="text-decoration:none;">
-      <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:28px;color:hsl(36,27%,93%);letter-spacing:-0.04em;">A<span style="color:hsl(38,65%,55%)">.</span>K</span>
-    </a>
-    <nav class="nav-desktop" style="display:flex;align-items:center;gap:40px;">
-      <ul style="list-style:none;display:flex;gap:32px;align-items:center;">
-        <li><a href="#about" class="nav-link" style="font-size:11px;font-weight:500;color:hsl(0,0%,55%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;transition:color 0.3s;" onmouseover="this.style.color='hsl(38,65%,55%)'" onmouseout="this.style.color='hsl(0,0%,55%)'">About</a></li>
-        <li><a href="#skills" class="nav-link" style="font-size:11px;font-weight:500;color:hsl(0,0%,55%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;transition:color 0.3s;" onmouseover="this.style.color='hsl(38,65%,55%)'" onmouseout="this.style.color='hsl(0,0%,55%)'">Skills</a></li>
-        <li><a href="#projects" class="nav-link" style="font-size:11px;font-weight:500;color:hsl(0,0%,55%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;transition:color 0.3s;" onmouseover="this.style.color='hsl(38,65%,55%)'" onmouseout="this.style.color='hsl(0,0%,55%)'">Projects</a></li>
-        <li><a href="#experience" class="nav-link" style="font-size:11px;font-weight:500;color:hsl(0,0%,55%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;transition:color 0.3s;" onmouseover="this.style.color='hsl(38,65%,55%)'" onmouseout="this.style.color='hsl(0,0%,55%)'">Experience</a></li>
-        <li><a href="#contact" class="nav-link" style="font-size:11px;font-weight:500;color:hsl(0,0%,55%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;transition:color 0.3s;" onmouseover="this.style.color='hsl(38,65%,55%)'" onmouseout="this.style.color='hsl(0,0%,55%)'">Contact</a></li>
-      </ul>
-      <a href="#contact" style="display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:9999px;border:1px solid hsl(0,0%,15%);background:hsl(0,0%,4%);text-decoration:none;">
-        <span style="position:relative;display:flex;width:8px;height:8px;"><span class="animate-ping" style="position:absolute;inset:0;border-radius:9999px;background:#22c55e;opacity:0.75;"></span><span style="position:relative;display:inline-flex;border-radius:9999px;width:8px;height:8px;background:#22c55e;"></span></span>
-        <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.15em;font-weight:500;color:hsl(36,27%,93%);">Available for work</span>
-      </a>
-    </nav>
-    <button class="nav-mobile-btn" id="mobile-toggle" style="display:none;background:none;border:none;cursor:pointer;color:hsl(36,27%,93%);">
-      <svg id="icon-menu" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      <svg id="icon-close" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:none;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-  <div id="mobile-nav" style="display:none;padding:32px 40px;border-top:1px solid rgba(212,168,67,0.2);background:hsl(0,0%,4%);flex-direction:column;gap:24px;">
-    <a href="#about" onclick="closeMobile()" style="font-size:14px;color:hsl(36,27%,93%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;">About</a>
-    <a href="#skills" onclick="closeMobile()" style="font-size:14px;color:hsl(36,27%,93%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;">Skills</a>
-    <a href="#projects" onclick="closeMobile()" style="font-size:14px;color:hsl(36,27%,93%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;">Projects</a>
-    <a href="#experience" onclick="closeMobile()" style="font-size:14px;color:hsl(36,27%,93%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;">Experience</a>
-    <a href="#contact" onclick="closeMobile()" style="font-size:14px;color:hsl(36,27%,93%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;">Contact</a>
-  </div>
-</header>
+src/
+├── index.css
+├── App.tsx
+├── pages/
+│   └── Home.tsx
+└── components/
+    ├── animations/
+    │   └── FadeIn.tsx
+    ├── layout/
+    │   ├── Navbar.tsx
+    │   └── Footer.tsx
+    └── sections/
+        ├── Hero.tsx
+        ├── About.tsx
+        ├── Links.tsx
+        └── Contact.tsx
 
-<!-- HERO -->
-<section id="home" class="grid-bg" style="position:relative;min-height:100vh;display:flex;align-items:center;padding-top:80px;overflow:hidden;background-color:hsl(0,0%,4%);">
-  <div class="hero-grid" style="position:relative;z-index:10;width:100%;max-width:1400px;margin:0 auto;padding:0 40px;display:flex;align-items:center;justify-content:space-between;gap:64px;">
-    <div style="flex:1;min-width:280px;display:flex;flex-direction:column;align-items:flex-start;">
-      <div class="fade-up delay-1" style="display:flex;align-items:center;gap:16px;margin-bottom:32px;">
-        <div style="width:48px;height:1px;background:hsl(38,65%,55%);"></div>
-        <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.2em;color:hsl(0,0%,55%);font-weight:500;">Creative Developer & Designer</span>
-      </div>
-      <h1 class="fade-up delay-2" style="font-family:'Playfair Display',serif;font-size:clamp(40px,7vw,88px);font-weight:700;line-height:1.05;letter-spacing:-0.02em;margin-bottom:32px;color:hsl(36,27%,93%);">
-        Turning ideas<br>into digital <span class="text-gradient" style="font-style:italic;font-weight:300;padding-right:4px;">reality.</span>
-      </h1>
-      <div class="fade-up delay-3" style="width:100%;max-width:420px;height:1px;background:rgba(212,168,67,0.3);margin-bottom:32px;"></div>
-      <p class="fade-up delay-4" style="font-size:clamp(15px,1.5vw,18px);color:hsl(0,0%,55%);max-width:520px;margin-bottom:48px;line-height:1.8;font-weight:300;">I specialize in crafting high-end digital experiences that merge elegant design with robust engineering. Bridging the gap between aesthetics and performance.</p>
-      <div class="fade-up delay-5" style="display:flex;flex-wrap:wrap;gap:24px;margin-bottom:64px;">
-        <a href="#projects" style="padding:16px 32px;background:hsl(38,65%,55%);color:hsl(0,0%,4%);font-weight:500;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;text-decoration:none;transition:opacity 0.3s;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">Selected Works</a>
-        <a href="#contact" style="padding:16px 32px;background:transparent;border:1px solid hsl(0,0%,15%);color:hsl(36,27%,93%);font-weight:500;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;text-decoration:none;transition:border-color 0.3s,color 0.3s;" onmouseover="this.style.borderColor='hsl(38,65%,55%)';this.style.color='hsl(38,65%,55%)'" onmouseout="this.style.borderColor='hsl(0,0%,15%)';this.style.color='hsl(36,27%,93%)'">Let's Talk</a>
-      </div>
-      <div class="fade-up delay-6 stats-row" style="display:flex;gap:48px;align-items:flex-start;">
-        <div style="display:flex;flex-direction:column;gap:10px;"><div style="width:32px;height:1px;background:hsl(0,0%,15%);"></div><span style="font-family:'Playfair Display',serif;font-size:30px;">5+</span><span style="font-size:10px;text-transform:uppercase;letter-spacing:0.15em;color:hsl(0,0%,55%);">Years Exp</span></div>
-        <div style="display:flex;flex-direction:column;gap:10px;"><div style="width:32px;height:1px;background:hsl(0,0%,15%);"></div><span style="font-family:'Playfair Display',serif;font-size:30px;">50+</span><span style="font-size:10px;text-transform:uppercase;letter-spacing:0.15em;color:hsl(0,0%,55%);">Projects</span></div>
-        <div style="display:flex;flex-direction:column;gap:10px;"><div style="width:32px;height:1px;background:hsl(0,0%,15%);"></div><span style="font-family:'Playfair Display',serif;font-size:30px;">20+</span><span style="font-size:10px;text-transform:uppercase;letter-spacing:0.15em;color:hsl(0,0%,55%);">Clients</span></div>
-      </div>
-    </div>
-    <div class="hero-right fade-left delay-4" style="flex:0 0 360px;max-width:400px;position:relative;">
-      <div style="position:absolute;top:-16px;right:-16px;width:80px;height:80px;border-top:1px solid rgba(212,168,67,0.5);border-right:1px solid rgba(212,168,67,0.5);z-index:0;"></div>
-      <div style="position:absolute;bottom:-16px;left:-16px;width:80px;height:80px;border-bottom:1px solid rgba(212,168,67,0.5);border-left:1px solid rgba(212,168,67,0.5);z-index:0;"></div>
-      <div style="position:relative;z-index:10;aspect-ratio:3/4;overflow:hidden;background:hsl(0,0%,7%);border:1px solid hsl(0,0%,15%);box-shadow:0 25px 50px rgba(0,0,0,0.5);">
-        <!-- APNI PHOTO KI JAGAH YE URL REPLACE KAREIN -->
-        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=800&fit=crop&crop=face" alt="Profile" style="width:100%;height:100%;object-fit:cover;filter:grayscale(1);transition:filter 0.7s;" onmouseover="this.style.filter='grayscale(0)'" onmouseout="this.style.filter='grayscale(1)'">
-        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,10,0.8) 0%,transparent 60%);pointer-events:none;"></div>
-      </div>
-    </div>
-  </div>
-</section>
+================================================================
+FILE 1: src/index.css
+================================================================
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Manrope:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 
-<!-- ABOUT -->
-<section id="about" class="section-pad" style="padding:128px 40px;position:relative;background:hsl(0,0%,4%);overflow:hidden;">
-  <div style="position:absolute;top:40px;left:0;font-family:'Playfair Display',serif;font-size:clamp(120px,20vw,380px);line-height:1;font-weight:700;color:hsl(36,27%,93%);opacity:0.03;pointer-events:none;user-select:none;">01</div>
-  <div style="max-width:1400px;margin:0 auto;position:relative;z-index:10;">
-    <div class="fade-up" style="display:flex;align-items:center;gap:12px;margin-bottom:80px;">
-      <div style="width:8px;height:8px;border-radius:9999px;background:hsl(38,65%,55%);"></div>
-      <span style="font-size:11px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);">About Me</span>
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: var(--primary-border);
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: var(--secondary-border);
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-border: var(--muted-border);
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-border: var(--accent-border);
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: var(--destructive-border);
+
+  --font-sans: 'Manrope', sans-serif;
+  --font-serif: 'Cormorant Garamond', serif;
+  --font-display: 'Cormorant Garamond', serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  /* Warm neutral palette - Clean, minimal, professional */
+  --background: 40 33% 98%;      /* Soft cream/off-white */
+  --foreground: 24 15% 15%;      /* Deep warm brown/charcoal */
+  
+  --card: 0 0% 100%;             /* Pure white */
+  --card-foreground: 24 15% 15%;
+  --card-border: 30 15% 92%;
+  
+  --popover: 0 0% 100%;
+  --popover-foreground: 24 15% 15%;
+  --popover-border: 30 15% 92%;
+  
+  --primary: 24 20% 35%;         /* Muted warm umber/brown */
+  --primary-foreground: 40 33% 98%;
+  
+  --secondary: 30 20% 94%;       /* Light warm gray/beige */
+  --secondary-foreground: 24 15% 25%;
+  
+  --muted: 30 20% 94%;
+  --muted-foreground: 24 10% 45%;
+  
+  --accent: 25 30% 90%;          /* Soft warm accent */
+  --accent-foreground: 24 20% 30%;
+  
+  --destructive: 0 70% 50%;
+  --destructive-foreground: 40 33% 98%;
+  
+  --border: 30 15% 90%;
+  --input: 30 15% 90%;
+  --ring: 24 20% 35%;
+  
+  --radius: 0.75rem;
+}
+
+.dark {
+  /* Deep warm dark mode */
+  --background: 24 15% 12%;      /* Very dark warm brown/gray */
+  --foreground: 40 25% 95%;      /* Soft off-white */
+  
+  --card: 24 12% 15%;            /* Slightly lighter than bg */
+  --card-foreground: 40 25% 95%;
+  --card-border: 24 10% 22%;
+  
+  --popover: 24 12% 15%;
+  --popover-foreground: 40 25% 95%;
+  --popover-border: 24 10% 22%;
+  
+  --primary: 30 25% 75%;         /* Soft tan/beige */
+  --primary-foreground: 24 15% 15%;
+  
+  --secondary: 24 10% 20%;
+  --secondary-foreground: 40 20% 90%;
+  
+  --muted: 24 10% 20%;
+  --muted-foreground: 30 15% 65%;
+  
+  --accent: 24 15% 25%;
+  --accent-foreground: 40 25% 95%;
+  
+  --destructive: 0 60% 40%;
+  --destructive-foreground: 40 25% 95%;
+  
+  --border: 24 10% 25%;
+  --input: 24 10% 25%;
+  --ring: 30 25% 75%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground selection:bg-primary/20 selection:text-primary;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-background/70 backdrop-blur-lg border border-border/50 shadow-sm;
+  }
+}
+
+================================================================
+FILE 2: src/App.tsx
+================================================================
+import { Switch, Route, Router as WouterRouter } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import Home from "@/pages/Home";
+import NotFound from "@/pages/not-found";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+    },
+  },
+});
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <Router />
+        </WouterRouter>
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
+
+================================================================
+FILE 3: src/pages/Home.tsx
+================================================================
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
+import { Hero } from "@/components/sections/Hero";
+import { About } from "@/components/sections/About";
+import { Links } from "@/components/sections/Links";
+import { Contact } from "@/components/sections/Contact";
+
+export default function Home() {
+  return (
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary">
+      <Navbar />
+      
+      <main>
+        <Hero />
+        <About />
+        <Links />
+        <Contact />
+      </main>
+
+      <Footer />
     </div>
-    <div class="about-grid" style="display:grid;grid-template-columns:1fr 1.5fr;gap:80px;align-items:start;margin-bottom:80px;">
-      <div class="fade-up delay-2">
-        <h3 style="font-family:'Playfair Display',serif;font-size:clamp(22px,3vw,40px);font-weight:700;line-height:1.2;color:hsl(36,27%,93%);">"Design is intelligence made visible, but code makes it functional."</h3>
+  );
+}
+
+================================================================
+FILE 4: src/components/animations/FadeIn.tsx
+================================================================
+import { motion } from "framer-motion";
+import { ReactNode } from "react";
+
+interface FadeInProps {
+  children: ReactNode;
+  delay?: number;
+  direction?: "up" | "down" | "left" | "right" | "none";
+  fullWidth?: boolean;
+  className?: string;
+}
+
+export function FadeIn({
+  children,
+  delay = 0,
+  direction = "up",
+  fullWidth = false,
+  className = "",
+}: FadeInProps) {
+  const directions = {
+    up: { y: 30, x: 0 },
+    down: { y: -30, x: 0 },
+    left: { x: 30, y: 0 },
+    right: { x: -30, y: 0 },
+    none: { x: 0, y: 0 },
+  };
+
+  return (
+    <motion.div
+      initial={{ 
+        opacity: 0, 
+        ...directions[direction] 
+      }}
+      whileInView={{ 
+        opacity: 1, 
+        x: 0, 
+        y: 0 
+      }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{
+        duration: 0.8,
+        delay: delay,
+        ease: [0.21, 0.47, 0.32, 0.98],
+      }}
+      className={`${fullWidth ? "w-full" : ""} ${className}`}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+================================================================
+FILE 5: src/components/layout/Navbar.tsx
+================================================================
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Menu, X } from "lucide-react";
+
+export function Navbar() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const navLinks = [
+    { name: "Home", href: "#home" },
+    { name: "About", href: "#about" },
+    { name: "Links", href: "#links" },
+    { name: "Contact", href: "#contact" },
+  ];
+
+  return (
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled ? "py-4" : "py-6"
+      }`}
+    >
+      <div className="max-w-5xl mx-auto px-6">
+        <nav
+          className={`flex items-center justify-between rounded-full transition-all duration-500 ${
+            isScrolled
+              ? "glass-panel px-6 py-3 shadow-lg shadow-black/5"
+              : "px-2 py-2 bg-transparent"
+          }`}
+        >
+          {/* Logo / Name */}
+          <a
+            href="#home"
+            className="font-display font-bold text-xl tracking-wide text-foreground hover:opacity-70 transition-opacity"
+          >
+            Alex Morgan
+          </a>
+
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center space-x-1">
+            {navLinks.map((link) => (
+              <a
+                key={link.name}
+                href={link.href}
+                className="px-4 py-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
+              >
+                {link.name}
+              </a>
+            ))}
+          </div>
+
+          {/* Mobile Menu Toggle */}
+          <button
+            className="md:hidden p-2 text-foreground"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </nav>
+
+        {/* Mobile Dropdown */}
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="md:hidden absolute top-full left-6 right-6 mt-2 p-4 glass-panel rounded-2xl flex flex-col space-y-2"
+          >
+            {navLinks.map((link) => (
+              <a
+                key={link.name}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-4 py-3 rounded-xl text-base font-medium text-foreground hover:bg-secondary/50 transition-all"
+              >
+                {link.name}
+              </a>
+            ))}
+          </motion.div>
+        )}
       </div>
-      <div class="fade-up delay-4">
-        <div style="color:hsl(0,0%,55%);font-size:16px;line-height:1.9;font-weight:300;margin-bottom:32px;">
-          <p style="margin-bottom:20px;">Based in San Francisco, I am a digital craftsman who thrives at the intersection of pixel-perfect design and complex engineering. With over five years of experience, I approach every project with an editorial eye and technical rigor.</p>
-          <p>My philosophy revolves around minimalism and intent. I believe interfaces should not just look beautiful, but feel intuitive.</p>
+    </header>
+  );
+}
+
+================================================================
+FILE 6: src/components/layout/Footer.tsx
+================================================================
+import { ArrowUp } from "lucide-react";
+
+export function Footer() {
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  return (
+    <footer className="py-12 border-t border-border/50 bg-background">
+      <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="text-center md:text-left">
+          <p className="font-display text-xl font-medium text-foreground mb-1">
+            Alex Morgan
+          </p>
+          <p className="text-sm text-muted-foreground">
+            &copy; {new Date().getFullYear()} All rights reserved.
+          </p>
         </div>
-        <ul style="list-style:none;display:flex;flex-direction:column;gap:14px;">
-          <li style="display:flex;align-items:center;gap:16px;font-size:14px;color:hsl(36,27%,93%);"><span style="width:16px;height:1px;background:hsl(38,65%,55%);display:inline-block;flex-shrink:0;"></span>Award-winning digital experiences</li>
-          <li style="display:flex;align-items:center;gap:16px;font-size:14px;color:hsl(36,27%,93%);"><span style="width:16px;height:1px;background:hsl(38,65%,55%);display:inline-block;flex-shrink:0;"></span>Full-stack scalable architectures</li>
-          <li style="display:flex;align-items:center;gap:16px;font-size:14px;color:hsl(36,27%,93%);"><span style="width:16px;height:1px;background:hsl(38,65%,55%);display:inline-block;flex-shrink:0;"></span>Obsessive attention to typography and space</li>
-          <li style="display:flex;align-items:center;gap:16px;font-size:14px;color:hsl(36,27%,93%);"><span style="width:16px;height:1px;background:hsl(38,65%,55%);display:inline-block;flex-shrink:0;"></span>Open source contributor and speaker</li>
-        </ul>
-      </div>
-    </div>
-    <div class="fade-up delay-5 what-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
-      <div style="border:1px solid rgba(255,255,255,0.08);padding:32px;transition:border-color 0.3s;cursor:default;" onmouseover="this.style.borderColor='rgba(212,168,67,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-        <div style="font-size:10px;letter-spacing:0.2em;color:hsl(0,0%,55%);text-transform:uppercase;margin-bottom:20px;">01</div>
-        <h4 style="font-family:'Playfair Display',serif;font-size:19px;font-weight:700;margin-bottom:12px;color:hsl(36,27%,93%);">Art Direction</h4>
-        <p style="font-size:14px;color:hsl(0,0%,55%);line-height:1.7;font-weight:300;">Crafting distinct visual identities and editorial layouts that capture attention.</p>
-      </div>
-      <div style="border:1px solid rgba(255,255,255,0.08);padding:32px;transition:border-color 0.3s;cursor:default;" onmouseover="this.style.borderColor='rgba(212,168,67,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-        <div style="font-size:10px;letter-spacing:0.2em;color:hsl(0,0%,55%);text-transform:uppercase;margin-bottom:20px;">02</div>
-        <h4 style="font-family:'Playfair Display',serif;font-size:19px;font-weight:700;margin-bottom:12px;color:hsl(36,27%,93%);">Frontend Engineering</h4>
-        <p style="font-size:14px;color:hsl(0,0%,55%);line-height:1.7;font-weight:300;">Building lightning-fast, accessible interfaces using modern web standards.</p>
-      </div>
-      <div style="border:1px solid rgba(255,255,255,0.08);padding:32px;transition:border-color 0.3s;cursor:default;" onmouseover="this.style.borderColor='rgba(212,168,67,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-        <div style="font-size:10px;letter-spacing:0.2em;color:hsl(0,0%,55%);text-transform:uppercase;margin-bottom:20px;">03</div>
-        <h4 style="font-family:'Playfair Display',serif;font-size:19px;font-weight:700;margin-bottom:12px;color:hsl(36,27%,93%);">Backend Architecture</h4>
-        <p style="font-size:14px;color:hsl(0,0%,55%);line-height:1.7;font-weight:300;">Designing secure, scalable server systems and APIs that power complex applications.</p>
-      </div>
-    </div>
-  </div>
-</section>
 
-<!-- SKILLS -->
-<section id="skills" class="section-pad" style="padding:128px 4
+        <div className="flex items-center gap-6 text-sm text-muted-foreground font-medium">
+          <a href="#about" className="hover:text-foreground transition-colors">
+            About
+          </a>
+          <a href="#links" className="hover:text-foreground transition-colors">
+            Links
+          </a>
+          <a href="#contact" className="hover:text-foreground transition-colors">
+            Contact
+          </a>
+        </div>
+
+        <button
+          onClick={scrollToTop}
+          className="p-3 rounded-full bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-300 group"
+          aria-label="Scroll to top"
+        >
+          <ArrowUp className="w-5 h-5 group-hover:-translate-y-1 transition-transform" />
+        </button>
+      </div>
+    </footer>
+  );
+}
+
+================================================================
+FILE 7: src/components/sections/Hero.tsx
+================================================================
+import { FadeIn } from "@/components/animations/FadeIn";
+import { ArrowRight } from "lucide-react";
+
+export function Hero() {
+  return (
+    <section 
+      id="home" 
+      className="min-h-[100svh] flex flex-col justify-center pt-24 pb-12 overflow-hidden relative"
+    >
+      {/* Decorative background blur element */}
+      <div className="absolute top-1/4 -right-1/4 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute -bottom-1/4 -left-1/4 w-[600px] h-[600px] bg-accent/30 rounded-full blur-3xl pointer-events-none -z-10" />
+
+      <div className="max-w-5xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+        
+        {/* Content Column */}
+        <div className="lg:col-span-7 flex flex-col items-start z-10">
+          <FadeIn delay={0.1}>
+            <div className="inline-flex items-center px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-sm font-medium mb-6">
+              <span className="relative flex h-2 w-2 mr-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              </span>
+              Available for new projects
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={0.2}>
+            <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-semibold leading-[1.1] text-foreground mb-6">
+              Designing digital 
+              <br className="hidden sm:block" /> 
+              experiences that <span className="text-primary italic">inspire.</span>
+            </h1>
+          </FadeIn>
+
+          <FadeIn delay={0.3}>
+            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-lg mb-10 font-light">
+              Hi, I'm Alex. A multidisciplinary designer and engineer crafting beautiful, 
+              functional, and intuitive digital products.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={0.4}>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <a 
+                href="#contact"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-full bg-primary text-primary-foreground font-semibold text-lg hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 transition-all duration-300 group"
+              >
+                Let's talk
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </a>
+              <a 
+                href="#about"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-full bg-secondary text-secondary-foreground font-semibold text-lg hover:bg-secondary/80 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
+              >
+                About me
+              </a>
+            </div>
+          </FadeIn>
+        </div>
+
+        {/* Image Column */}
+        <div className="lg:col-span-5 relative z-10 w-full max-w-md mx-auto lg:max-w-none">
+          <FadeIn delay={0.5} direction="left" className="relative">
+            {/* The main image container */}
+            <div className="aspect-[4/5] sm:aspect-square lg:aspect-[4/5] rounded-[2rem] overflow-hidden bg-secondary relative shadow-2xl shadow-black/5">
+              <img 
+                src={`${import.meta.env.BASE_URL}images/avatar.png`} 
+                alt="Alex Morgan" 
+                className="w-full h-full object-cover object-center"
+              />
+              <div className="absolute inset-0 border border-black/5 rounded-[2rem] pointer-events-none"></div>
+            </div>
+
+            {/* Floating badge */}
+            <div className="absolute -bottom-6 -left-6 sm:-left-12 glass-panel p-4 rounded-2xl animate-in slide-in-from-bottom-8 duration-1000 delay-700 fill-mode-both">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-display text-xl font-bold">
+                  5+
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Years Experience</p>
+                  <p className="text-xs text-muted-foreground">Product Design</p>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
+================================================================
+FILE 8: src/components/sections/About.tsx
+================================================================
+import { FadeIn } from "@/components/animations/FadeIn";
+
+export function About() {
+  const skills = [
+    "Product Design", "Frontend Development", "Design Systems", 
+    "UX Research", "Prototyping", "Interaction Design"
+  ];
+
+  return (
+    <section id="about" className="py-24 bg-background relative border-t border-border/30">
+      <div className="max-w-5xl mx-auto px-6">
+        <FadeIn>
+          <h2 className="font-display text-4xl md:text-5xl font-semibold text-foreground mb-16">
+            A little about me
+          </h2>
+        </FadeIn>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24">
+          <FadeIn delay={0.1}>
+            <div className="prose prose-lg text-muted-foreground font-light leading-relaxed">
+              <p className="mb-6">
+                I believe that the best digital experiences are built at the intersection 
+                of rigorous logic and profound empathy. My journey started in visual design, 
+                but my curiosity quickly led me down the rabbit hole of code.
+              </p>
+              <p className="mb-6">
+                Over the past five years, I've had the privilege of working with startups 
+                and established brands to build products that not only look beautiful but 
+                solve real user problems. I care deeply about accessibility, performance, 
+                and crafting interactions that feel magical.
+              </p>
+              <p>
+                When I'm not pushing pixels or wrangling code, you can find me brewing 
+                the perfect cup of specialty coffee, exploring film photography, or 
+                hiking with my golden retriever.
+              </p>
+            </div>
+          </FadeIn>
+
+          <div className="flex flex-col gap-12">
+            <FadeIn delay={0.2}>
+              <h3 className="font-display text-2xl font-medium text-foreground mb-6">
+                What I do
+              </h3>
+              <div className="flex flex-wrap gap-3">
+                {skills.map((skill, index) => (
+                  <span 
+                    key={index}
+                    className="px-4 py-2 rounded-full bg-secondary border border-border/50 text-secondary-foreground text-sm font-medium hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors cursor-default"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+    
