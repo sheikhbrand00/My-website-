@@ -1,832 +1,2264 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alex Kumar — Creative Developer & Designer</title>
+AI TOOLS SUITE - FULL SOURCE CODE
+  ===================================
+  Website with AI Chat, Image Generator, and Resume Maker
+  Built with React + Vite (Frontend) and Express.js (Backend)
+  Uses OpenAI API via Replit AI Integrations
+  ===================================
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+  
+============================================================
+FILE: lib/api-spec/openapi.yaml
+============================================================
 
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: openai
+    description: OpenAI AI chat, image, and audio operations
+  - name: resume
+    description: AI Resume generation
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /openai/conversations:
+    get:
+      operationId: listOpenaiConversations
+      tags: [openai]
+      summary: List all conversations
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OpenaiConversation"
+    post:
+      operationId: createOpenaiConversation
+      tags: [openai]
+      summary: Create a new conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOpenaiConversationBody"
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenaiConversation"
+  /openai/conversations/{id}:
+    get:
+      operationId: getOpenaiConversation
+      tags: [openai]
+      summary: Get conversation with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenaiConversationWithMessages"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenaiError"
+    delete:
+      operationId: deleteOpenaiConversation
+      tags: [openai]
+      summary: Delete a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpenaiError"
+  /openai/conversations/{id}/messages:
+    get:
+      operationId: listOpenaiMessages
+      tags: [openai]
+      summary: List messages in a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OpenaiMessage"
+    post:
+      operationId: sendOpenaiMessage
+      tags: [openai]
+      summary: Send a text message and receive a streaming text response
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendOpenaiMessageBody"
+      responses:
+        "200":
+          description: SSE stream of assistant text chunks
+          content:
+            text/event-stream: {}
+  /openai/generate-image:
+    post:
+      operationId: generateOpenaiImage
+      tags: [openai]
+      summary: Generate an image from a text prompt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateOpenaiImageBody"
+      responses:
+        "200":
+          description: Generated image data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateOpenaiImageResponse"
+  /resume/generate:
+    post:
+      operationId: generateResume
+      tags: [resume]
+      summary: Generate a professional resume using AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateResumeBody"
+      responses:
+        "200":
+          description: Generated resume content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateResumeResponse"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    OpenaiConversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - createdAt
+    OpenaiMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        role:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - conversationId
+        - role
+        - content
+        - createdAt
+    CreateOpenaiConversationBody:
+      type: object
+      properties:
+        title:
+          type: string
+      required:
+        - title
+    SendOpenaiMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+    OpenaiConversationWithMessages:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/OpenaiMessage"
+      required:
+        - id
+        - title
+        - createdAt
+        - messages
+    GenerateOpenaiImageBody:
+      type: object
+      properties:
+        prompt:
+          type: string
+        size:
+          type: string
+          enum: ["1024x1024", "512x512", "256x256"]
+      required:
+        - prompt
+    GenerateOpenaiImageResponse:
+      type: object
+      properties:
+        b64_json:
+          type: string
+      required:
+        - b64_json
+    OpenaiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    GenerateResumeBody:
+      type: object
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        location:
+          type: string
+        summary:
+          type: string
+        experience:
+          type: string
+        education:
+          type: string
+        skills:
+          type: string
+        targetRole:
+          type: string
+      required:
+        - fullName
+        - email
+        - targetRole
+    GenerateResumeResponse:
+      type: object
+      properties:
+        resumeText:
+          type: string
+        sections:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - resumeText
+        - sections
 
-  <!-- React + ReactDOM + Babel (for JSX in browser) -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans:  ["DM Sans", "sans-serif"],
-            serif: ["Playfair Display", "serif"],
-          },
-          colors: {
-            background:      "hsl(0,0%,4%)",
-            foreground:      "hsl(36,27%,93%)",
-            primary:         "hsl(38,65%,55%)",
-            "primary-fg":    "hsl(0,0%,4%)",
-            card:            "hsl(0,0%,7%)",
-            secondary:       "hsl(0,0%,10%)",
-            muted:           "hsl(0,0%,13%)",
-            "muted-fg":      "hsl(0,0%,55%)",
-            border:          "hsl(0,0%,15%)",
-            destructive:     "hsl(0,84%,60%)",
-          },
-        },
+============================================================
+FILE: lib/db/src/schema/conversations.ts
+============================================================
+
+import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod/v4";
+
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const insertConversationSchema = createInsertSchema(conversations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Conversation = typeof conversations.$inferSelect;
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+
+
+============================================================
+FILE: lib/db/src/schema/messages.ts
+============================================================
+
+import { integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod/v4";
+
+import { conversations } from "./conversations";
+
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id")
+    .notNull()
+    .references(() => conversations.id, { onDelete: "cascade" }),
+  role: text("role").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
+
+============================================================
+FILE: lib/db/src/schema/index.ts
+============================================================
+
+// Export your models here. Add one export per file
+// export * from "./posts";
+//
+// Each model/table should ideally be split into different files.
+// Each model/table should define a Drizzle table, insert schema, and types:
+//
+//   import { pgTable, text, serial } from "drizzle-orm/pg-core";
+//   import { createInsertSchema } from "drizzle-zod";
+//   import { z } from "zod/v4";
+//
+//   export const postsTable = pgTable("posts", {
+//     id: serial("id").primaryKey(),
+//     title: text("title").notNull(),
+//   });
+//
+//   export const insertPostSchema = createInsertSchema(postsTable).omit({ id: true });
+//   export type InsertPost = z.infer<typeof insertPostSchema>;
+//   export type Post = typeof postsTable.$inferSelect;
+
+export * from "./conversations";
+export * from "./messages";
+
+============================================================
+FILE: artifacts/api-server/src/app.ts
+============================================================
+
+import express, { type Express } from "express";
+import cors from "cors";
+import pinoHttp from "pino-http";
+import router from "./routes";
+import { logger } from "./lib/logger";
+
+const app: Express = express();
+
+app.use(
+  pinoHttp({
+    logger,
+    serializers: {
+      req(req) {
+        return {
+          id: req.id,
+          method: req.method,
+          url: req.url?.split("?")[0],
+        };
       },
-    };
-  </script>
-
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html {
-      scroll-behavior: smooth;
-      scroll-padding-top: 5rem;
-    }
-
-    body {
-      background-color: hsl(0,0%,4%);
-      color: hsl(36,27%,93%);
-      font-family: "DM Sans", sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    h1,h2,h3,h4,h5,h6 {
-      font-family: "Playfair Display", serif;
-    }
-
-    .text-gradient {
-      background: linear-gradient(135deg, #D4A843 0%, #F5D78E 50%, #D4A843 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .grid-bg {
-      background-image:
-        linear-gradient(to right, rgba(128,128,128,0.07) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(128,128,128,0.07) 1px, transparent 1px);
-      background-size: 24px 24px;
-    }
-
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: hsl(0,0%,4%); }
-    ::-webkit-scrollbar-thumb { background: hsl(0,0%,20%); border-radius: 9999px; }
-
-    /* Fade-in animation */
-    .fade-up {
-      opacity: 0;
-      transform: translateY(30px);
-      transition: opacity 0.7s cubic-bezier(0.21,0.47,0.32,0.98),
-                  transform 0.7s cubic-bezier(0.21,0.47,0.32,0.98);
-    }
-    .fade-up.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .fade-left {
-      opacity: 0;
-      transform: translateX(30px);
-      transition: opacity 0.7s cubic-bezier(0.21,0.47,0.32,0.98),
-                  transform 0.7s cubic-bezier(0.21,0.47,0.32,0.98);
-    }
-    .fade-left.visible {
-      opacity: 1;
-      transform: translateX(0);
-    }
-
-    .delay-1 { transition-delay: 0.1s; }
-    .delay-2 { transition-delay: 0.2s; }
-    .delay-3 { transition-delay: 0.3s; }
-    .delay-4 { transition-delay: 0.4s; }
-    .delay-5 { transition-delay: 0.5s; }
-    .delay-6 { transition-delay: 0.6s; }
-
-    /* Ping animation */
-    @keyframes ping {
-      75%, 100% { transform: scale(2); opacity: 0; }
-    }
-    .animate-ping { animation: ping 1s cubic-bezier(0,0,0.2,1) infinite; }
-
-    /* Navbar underline hover */
-    .nav-link::after {
-      content: "";
-      position: absolute;
-      bottom: -6px; left: 0;
-      height: 1px; width: 0;
-      background: hsl(38,65%,55%);
-      transition: width 0.3s ease;
-    }
-    .nav-link:hover::after { width: 100%; }
-
-    /* Project hover border */
-    .project-row::before {
-      content: "";
-      position: absolute;
-      left: 0; top: 0; bottom: 0;
-      width: 2px;
-      background: hsl(38,65%,55%);
-      transform: scaleY(0);
-      transform-origin: top;
-      transition: transform 0.4s ease;
-    }
-    .project-row:hover::before { transform: scaleY(1); }
-
-    /* Bento hover */
-    .bento-tile .hover-fill {
-      position: absolute;
-      inset: 0;
-      background: rgba(212,168,67,0.05);
-      transform: translateY(100%);
-      transition: transform 0.5s ease;
-    }
-    .bento-tile:hover .hover-fill { transform: translateY(0); }
-
-    /* Contact input underline */
-    .input-line {
-      position: absolute;
-      bottom: 0; left: 0;
-      height: 1px; width: 0;
-      background: hsl(38,65%,55%);
-      transition: width 0.3s ease;
-    }
-    .contact-input:focus + .input-line { width: 100%; }
-
-    /* Timeline dot hover */
-    .timeline-dot {
-      width: 16px; height: 16px;
-      border-radius: 9999px;
-      background: hsl(0,0%,4%);
-      border: 1px solid hsl(38,65%,55%);
-      transition: background 0.3s;
-    }
-    .timeline-entry:hover .timeline-dot { background: hsl(38,65%,55%); }
-
-    /* Arrow button hover */
-    .arrow-btn {
-      width: 64px; height: 64px;
-      border-radius: 9999px;
-      border: 1px solid hsl(0,0%,15%);
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.3s, border-color 0.3s, color 0.3s;
-    }
-    .project-row:hover .arrow-btn {
-      background: hsl(38,65%,55%);
-      border-color: hsl(38,65%,55%);
-      color: hsl(0,0%,4%);
-    }
-
-    /* Social icon btn */
-    .social-btn {
-      width: 56px; height: 56px;
-      border-radius: 9999px;
-      border: 1px solid hsl(0,0%,15%);
-      display: flex; align-items: center; justify-content: center;
-      color: hsl(36,27%,93%);
-      transition: background 0.3s, border-color 0.3s, color 0.3s;
-      text-decoration: none;
-    }
-    .social-btn:hover {
-      background: hsl(38,65%,55%);
-      border-color: hsl(38,65%,55%);
-      color: hsl(0,0%,4%);
-    }
-  </style>
-</head>
-<body>
-
-<!-- ============================================================
-     NAVBAR
-============================================================ -->
-<header id="navbar" style="position:fixed;top:0;left:0;right:0;z-index:50;padding:24px 0;transition:all 0.5s;">
-  <div style="max-width:1400px;margin:0 auto;padding:0 48px;display:flex;align-items:center;justify-content:space-between;">
-
-    <a href="#home" style="text-decoration:none;">
-      <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:28px;color:hsl(36,27%,93%);letter-spacing:-0.04em;">
-        A<span style="color:hsl(38,65%,55%)">.</span>K
-      </span>
-    </a>
-
-    <!-- Desktop Nav -->
-    <nav id="desktop-nav" style="display:flex;align-items:center;gap:40px;">
-      <ul style="list-style:none;display:flex;gap:32px;align-items:center;">
-        <li><a href="#about"      class="nav-link" style="position:relative;font-size:11px;font-weight:500;color:hsl(0,0%,55%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;transition:color 0.3s;">About</a></li>
-        <li><a href="#skills"     class="nav-link" style="position:relative;font-size:11px;font-weight:500;color:hsl(0,0%,55%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;transition:color 0.3s;">Skills</a></li>
-        <li><a href="#projects"   class="nav-link" style="position:relative;font-size:11px;font-weight:500;color:hsl(0,0%,55%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;transition:color 0.3s;">Projects</a></li>
-        <li><a href="#experience" class="nav-link" style="position:relative;font-size:11px;font-weight:500;color:hsl(0,0%,55%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;transition:color 0.3s;">Experience</a></li>
-        <li><a href="#contact"    class="nav-link" style="position:relative;font-size:11px;font-weight:500;color:hsl(0,0%,55%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;transition:color 0.3s;">Contact</a></li>
-      </ul>
-      <a href="#contact" style="display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:9999px;border:1px solid hsl(0,0%,15%);background:hsl(0,0%,4%);text-decoration:none;transition:border-color 0.3s;">
-        <span style="position:relative;display:flex;width:8px;height:8px;">
-          <span class="animate-ping" style="position:absolute;inset:0;border-radius:9999px;background:#22c55e;opacity:0.75;"></span>
-          <span style="position:relative;display:inline-flex;border-radius:9999px;width:8px;height:8px;background:#22c55e;"></span>
-        </span>
-        <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.15em;font-weight:500;color:hsl(36,27%,93%);">Available for work</span>
-      </a>
-    </nav>
-
-    <!-- Mobile Toggle -->
-    <button id="mobile-toggle" style="display:none;background:none;border:none;cursor:pointer;color:hsl(36,27%,93%);" aria-label="Toggle menu">
-      <svg id="icon-menu" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      <svg id="icon-close" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:none;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-
-  <!-- Mobile Nav -->
-  <div id="mobile-nav" style="display:none;padding:32px 48px;border-top:1px solid hsl(38,65%,55%,0.2);background:hsl(0,0%,4%);flex-direction:column;gap:32px;">
-    <ul style="list-style:none;display:flex;flex-direction:column;gap:24px;">
-      <li><a href="#about"      onclick="closeMobile()" style="font-size:14px;font-weight:500;color:hsl(36,27%,93%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;">About</a></li>
-      <li><a href="#skills"     onclick="closeMobile()" style="font-size:14px;font-weight:500;color:hsl(36,27%,93%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;">Skills</a></li>
-      <li><a href="#projects"   onclick="closeMobile()" style="font-size:14px;font-weight:500;color:hsl(36,27%,93%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;">Projects</a></li>
-      <li><a href="#experience" onclick="closeMobile()" style="font-size:14px;font-weight:500;color:hsl(36,27%,93%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;">Experience</a></li>
-      <li><a href="#contact"    onclick="closeMobile()" style="font-size:14px;font-weight:500;color:hsl(36,27%,93%);text-transform:uppercase;letter-spacing:0.15em;text-decoration:none;">Contact</a></li>
-    </ul>
-  </div>
-</header>
-
-
-<!-- ============================================================
-     HERO
-============================================================ -->
-<section id="home" class="grid-bg" style="position:relative;min-height:100vh;display:flex;align-items:center;padding-top:80px;overflow:hidden;background-color:hsl(0,0%,4%);">
-  <div style="position:relative;z-index:10;width:100%;max-width:1400px;margin:0 auto;padding:0 48px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:64px;">
-
-    <!-- Left (60%) -->
-    <div style="flex:1;min-width:300px;max-width:700px;display:flex;flex-direction:column;align-items:flex-start;">
-
-      <div class="fade-up delay-1" style="display:flex;align-items:center;gap:16px;margin-bottom:32px;">
-        <div style="width:48px;height:1px;background:hsl(38,65%,55%);"></div>
-        <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.2em;color:hsl(0,0%,55%);font-weight:500;">Creative Developer & Designer</span>
-      </div>
-
-      <h1 class="fade-up delay-2" style="font-family:'Playfair Display',serif;font-size:clamp(42px,7vw,88px);font-weight:700;line-height:1.05;letter-spacing:-0.02em;margin-bottom:32px;color:hsl(36,27%,93%);">
-        Turning ideas<br>into digital <span class="text-gradient" style="font-style:italic;font-weight:300;padding-right:4px;">reality.</span>
-      </h1>
-
-      <div class="fade-up delay-3" style="width:100%;max-width:420px;height:1px;background:rgba(212,168,67,0.3);margin-bottom:32px;"></div>
-
-      <p class="fade-up delay-4" style="font-size:clamp(15px,1.5vw,18px);color:hsl(0,0%,55%);max-width:520px;margin-bottom:48px;line-height:1.8;font-weight:300;">
-        I specialize in crafting high-end digital experiences that merge elegant design with robust engineering. Bridging the gap between aesthetics and performance.
-      </p>
-
-      <div class="fade-up delay-5" style="display:flex;flex-wrap:wrap;gap:24px;margin-bottom:64px;">
-        <a href="#projects" style="padding:16px 32px;background:hsl(38,65%,55%);color:hsl(0,0%,4%);font-weight:500;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;text-decoration:none;transition:opacity 0.3s;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">Selected Works</a>
-        <a href="#contact" style="padding:16px 32px;background:transparent;border:1px solid hsl(0,0%,15%);color:hsl(36,27%,93%);font-weight:500;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;text-decoration:none;transition:border-color 0.3s,color 0.3s;" onmouseover="this.style.borderColor='hsl(38,65%,55%)';this.style.color='hsl(38,65%,55%)'" onmouseout="this.style.borderColor='hsl(0,0%,15%)';this.style.color='hsl(36,27%,93%)'">Let's Talk</a>
-      </div>
-
-      <!-- Stats -->
-      <div class="fade-up delay-6" style="display:flex;gap:48px;align-items:flex-start;">
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="width:32px;height:1px;background:hsl(0,0%,15%);"></div>
-          <span style="font-family:'Playfair Display',serif;font-size:30px;">5+</span>
-          <span style="font-size:10px;text-transform:uppercase;letter-spacing:0.15em;color:hsl(0,0%,55%);">Years Exp</span>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="width:32px;height:1px;background:hsl(0,0%,15%);"></div>
-          <span style="font-family:'Playfair Display',serif;font-size:30px;">50+</span>
-          <span style="font-size:10px;text-transform:uppercase;letter-spacing:0.15em;color:hsl(0,0%,55%);">Projects</span>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="width:32px;height:1px;background:hsl(0,0%,15%);"></div>
-          <span style="font-family:'Playfair Display',serif;font-size:30px;">20+</span>
-          <span style="font-size:10px;text-transform:uppercase;letter-spacing:0.15em;color:hsl(0,0%,55%);">Clients</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right (40%) -->
-    <div class="fade-left delay-4" style="flex:0 0 380px;max-width:420px;position:relative;">
-      <div style="position:absolute;top:-16px;right:-16px;width:100px;height:100px;border-top:1px solid rgba(212,168,67,0.5);border-right:1px solid rgba(212,168,67,0.5);z-index:0;"></div>
-      <div style="position:absolute;bottom:-16px;left:-16px;width:100px;height:100px;border-bottom:1px solid rgba(212,168,67,0.5);border-left:1px solid rgba(212,168,67,0.5);z-index:0;"></div>
-      <div style="position:absolute;top:32px;left:-32px;width:80px;height:160px;background-image:radial-gradient(hsl(38,65%,55%) 1px,transparent 1px);background-size:8px 8px;opacity:0.2;z-index:0;"></div>
-      <div style="position:relative;z-index:10;aspect-ratio:3/4;overflow:hidden;background:hsl(0,0%,7%);border:1px solid hsl(0,0%,15%);box-shadow:0 25px 50px rgba(0,0,0,0.5);">
-        <!-- ========================================================
-             REPLACE THIS SRC WITH YOUR OWN PHOTO URL
-             Example: src="https://yoursite.com/photo.jpg"
-             Or place a photo.jpg in the same folder and use: src="photo.jpg"
-        ======================================================== -->
-        <img src="IMG-20260317-WA0000.jpg" style="width:100%;height:100%;object-fit:cover;">
-        <div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(10,10,10,0.8) 0%, transparent 60%);pointer-events:none;"></div>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-
-<!-- ============================================================
-     ABOUT — Section 01
-============================================================ -->
-<section id="about" style="padding:128px 0;position:relative;background:hsl(0,0%,4%);overflow:hidden;">
-  <div style="position:absolute;top:40px;left:0;font-family:'Playfair Display',serif;font-size:clamp(160px,25vw,400px);line-height:1;font-weight:700;color:hsl(36,27%,93%);opacity:0.03;pointer-events:none;user-select:none;letter-spacing:-0.04em;">01</div>
-
-  <div style="max-width:1400px;margin:0 auto;padding:0 48px;position:relative;z-index:10;">
-
-    <div class="fade-up" style="display:flex;align-items:center;gap:12px;margin-bottom:80px;">
-      <div style="width:8px;height:8px;border-radius:9999px;background:hsl(38,65%,55%);"></div>
-      <span style="font-size:11px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);">About Me</span>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:64px;align-items:start;margin-bottom:80px;">
-      <div class="fade-up delay-2">
-        <h3 style="font-family:'Playfair Display',serif;font-size:clamp(24px,3.5vw,44px);font-weight:700;line-height:1.2;color:hsl(36,27%,93%);">
-          "Design is intelligence made visible, but code makes it functional."
-        </h3>
-      </div>
-
-      <div class="fade-up delay-4">
-        <div style="color:hsl(0,0%,55%);font-size:17px;line-height:1.9;font-weight:300;margin-bottom:32px;">
-          <p style="margin-bottom:24px;">Based in San Francisco, I am a digital craftsman who thrives at the intersection of pixel-perfect design and complex engineering. With over five years of experience, I approach every project with an editorial eye and technical rigor.</p>
-          <p>My philosophy revolves around minimalism and intent. I believe interfaces should not just look beautiful, but feel intuitive, breathing life into digital products through considered motion, elegant typography, and robust architecture.</p>
-        </div>
-        <ul style="list-style:none;display:flex;flex-direction:column;gap:16px;">
-          <li style="display:flex;align-items:center;gap:16px;font-size:14px;color:hsl(36,27%,93%);"><span style="width:16px;height:1px;background:hsl(38,65%,55%);display:inline-block;flex-shrink:0;"></span> Award-winning digital experiences</li>
-          <li style="display:flex;align-items:center;gap:16px;font-size:14px;color:hsl(36,27%,93%);"><span style="width:16px;height:1px;background:hsl(38,65%,55%);display:inline-block;flex-shrink:0;"></span> Full-stack scalable architectures</li>
-          <li style="display:flex;align-items:center;gap:16px;font-size:14px;color:hsl(36,27%,93%);"><span style="width:16px;height:1px;background:hsl(38,65%,55%);display:inline-block;flex-shrink:0;"></span> Obsessive attention to typography and space</li>
-          <li style="display:flex;align-items:center;gap:16px;font-size:14px;color:hsl(36,27%,93%);"><span style="width:16px;height:1px;background:hsl(38,65%,55%);display:inline-block;flex-shrink:0;"></span> Open source contributor and speaker</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- What I Do cards -->
-    <div class="fade-up delay-5" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;">
-      <div style="border:1px solid rgba(255,255,255,0.1);padding:32px;transition:border-color 0.3s,color 0.3s;cursor:default;" onmouseover="this.style.borderColor='rgba(212,168,67,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">
-        <div style="font-size:10px;letter-spacing:0.2em;color:hsl(0,0%,55%);text-transform:uppercase;margin-bottom:24px;">01</div>
-        <h4 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:16px;color:hsl(36,27%,93%);">Art Direction</h4>
-        <p style="font-size:14px;color:hsl(0,0%,55%);line-height:1.7;font-weight:300;">Crafting distinct visual identities and editorial layouts that capture attention and communicate purpose.</p>
-      </div>
-      <div style="border:1px solid rgba(255,255,255,0.1);padding:32px;transition:border-color 0.3s;cursor:default;" onmouseover="this.style.borderColor='rgba(212,168,67,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">
-        <div style="font-size:10px;letter-spacing:0.2em;color:hsl(0,0%,55%);text-transform:uppercase;margin-bottom:24px;">02</div>
-        <h4 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:16px;color:hsl(36,27%,93%);">Frontend Engineering</h4>
-        <p style="font-size:14px;color:hsl(0,0%,55%);line-height:1.7;font-weight:300;">Building lightning-fast, accessible interfaces using React, motion libraries, and modern web standards.</p>
-      </div>
-      <div style="border:1px solid rgba(255,255,255,0.1);padding:32px;transition:border-color 0.3s;cursor:default;" onmouseover="this.style.borderColor='rgba(212,168,67,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">
-        <div style="font-size:10px;letter-spacing:0.2em;color:hsl(0,0%,55%);text-transform:uppercase;margin-bottom:24px;">03</div>
-        <h4 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:16px;color:hsl(36,27%,93%);">Backend Architecture</h4>
-        <p style="font-size:14px;color:hsl(0,0%,55%);line-height:1.7;font-weight:300;">Designing secure, scalable server systems and APIs that power complex applications reliably.</p>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-
-<!-- ============================================================
-     SKILLS — Section 02
-============================================================ -->
-<section id="skills" style="padding:128px 0;position:relative;background:hsl(0,0%,6%);overflow:hidden;">
-  <div style="position:absolute;top:40px;right:40px;font-family:'Playfair Display',serif;font-size:clamp(160px,25vw,400px);line-height:1;font-weight:700;color:hsl(36,27%,93%);opacity:0.03;pointer-events:none;user-select:none;letter-spacing:-0.04em;">02</div>
-
-  <div style="max-width:1400px;margin:0 auto;padding:0 48px;position:relative;z-index:10;">
-
-    <div class="fade-up" style="display:flex;align-items:center;gap:12px;margin-bottom:80px;">
-      <div style="width:8px;height:8px;border-radius:9999px;background:hsl(38,65%,55%);"></div>
-      <span style="font-size:11px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);">Expertise</span>
-    </div>
-
-    <!-- Bento Grid -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:120px;gap:16px;">
-
-      <div class="bento-tile fade-up delay-1" style="grid-column:span 2;grid-row:span 2;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.08);padding:24px;display:flex;flex-direction:column;justify-content:flex-end;background:hsl(0,0%,7%);transition:border-color 0.3s;cursor:default;" onmouseover="this.style.borderColor='rgba(212,168,67,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-        <div class="hover-fill"></div>
-        <div style="position:relative;z-index:1;">
-          <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);margin-bottom:8px;">Framework</div>
-          <h3 style="font-family:'Playfair Display',serif;font-size:clamp(18px,2.5vw,26px);font-weight:700;color:hsl(36,27%,93%);">React / Next.js</h3>
-        </div>
-      </div>
-
-      <div class="bento-tile fade-up delay-2" style="grid-column:span 1;grid-row:span 1;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.08);padding:24px;display:flex;flex-direction:column;justify-content:flex-end;background:hsl(0,0%,11%);transition:border-color 0.3s;cursor:default;" onmouseover="this.style.borderColor='rgba(212,168,67,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-        <div class="hover-fill"></div>
-        <div style="position:relative;z-index:1;">
-          <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);margin-bottom:8px;">Language</div>
-          <h3 style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:hsl(36,27%,93%);">TypeScript</h3>
-        </div>
-      </div>
-
-      <div class="bento-tile fade-up delay-3" style="grid-column:span 1;grid-row:span 2;position:relative;overflow:hidden;border:1px solid rgba(212,168,67,0.3);padding:24px;display:flex;flex-direction:column;justify-content:flex-end;background:hsl(38,65%,55%);transition:border-color 0.3s;cursor:default;">
-        <div class="hover-fill"></div>
-        <div style="position:relative;z-index:1;">
-          <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(10,10,10,0.6);margin-bottom:8px;">Discipline</div>
-          <h3 style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:hsl(0,0%,4%);">UI/UX Design</h3>
-        </div>
-      </div>
-
-      <div class="bento-tile fade-up delay-1" style="grid-column:span 1;grid-row:span 1;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.08);padding:24px;display:flex;flex-direction:column;justify-content:flex-end;background:hsl(0,0%,7%);transition:border-color 0.3s;cursor:default;" onmouseover="this.style.borderColor='rgba(212,168,67,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-        <div class="hover-fill"></div>
-        <div style="position:relative;z-index:1;">
-          <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);margin-bottom:8px;">Animation</div>
-          <h3 style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:hsl(36,27%,93%);">Framer Motion</h3>
-        </div>
-      </div>
-
-      <div class="bento-tile fade-up delay-2" style="grid-column:span 2;grid-row:span 1;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.08);padding:24px;display:flex;flex-direction:column;justify-content:flex-end;background:hsl(0,0%,11%);transition:border-color 0.3s;cursor:default;" onmouseover="this.style.borderColor='rgba(212,168,67,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-        <div class="hover-fill"></div>
-        <div style="position:relative;z-index:1;">
-          <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);margin-bottom:8px;">Styling</div>
-          <h3 style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:hsl(36,27%,93%);">Tailwind CSS</h3>
-        </div>
-      </div>
-
-      <div class="bento-tile fade-up delay-3" style="grid-column:span 1;grid-row:span 1;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.08);padding:24px;display:flex;flex-direction:column;justify-content:flex-end;background:hsl(0,0%,7%);transition:border-color 0.3s;cursor:default;" onmouseover="this.style.borderColor='rgba(212,168,67,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-        <div class="hover-fill"></div>
-        <div style="position:relative;z-index:1;">
-          <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);margin-bottom:8px;">Backend</div>
-          <h3 style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:hsl(36,27%,93%);">Node.js</h3>
-        </div>
-      </div>
-
-      <div class="bento-tile fade-up delay-1" style="grid-column:span 1;grid-row:span 1;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.08);padding:24px;display:flex;flex-direction:column;justify-content:flex-end;background:hsl(0,0%,11%);transition:border-color 0.3s;cursor:default;" onmouseover="this.style.borderColor='rgba(212,168,67,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-        <div class="hover-fill"></div>
-        <div style="position:relative;z-index:1;">
-          <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);margin-bottom:8px;">Database</div>
-          <h3 style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:hsl(36,27%,93%);">PostgreSQL</h3>
-        </div>
-      </div>
-
-      <div class="bento-tile fade-up delay-2" style="grid-column:span 2;grid-row:span 1;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.08);padding:24px;display:flex;flex-direction:column;justify-content:flex-end;background:hsl(0,0%,7%);transition:border-color 0.3s;cursor:default;" onmouseover="this.style.borderColor='rgba(212,168,67,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-        <div class="hover-fill"></div>
-        <div style="position:relative;z-index:1;">
-          <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);margin-bottom:8px;">Creative</div>
-          <h3 style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:hsl(36,27%,93%);">WebGL / Three.js</h3>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-
-<!-- ============================================================
-     PROJECTS — Section 03
-============================================================ -->
-<section id="projects" style="padding:128px 0;position:relative;background:hsl(0,0%,4%);overflow:hidden;">
-  <div style="position:absolute;top:50%;left:0;transform:translateY(-50%);font-family:'Playfair Display',serif;font-size:clamp(160px,25vw,400px);line-height:1;font-weight:700;color:hsl(36,27%,93%);opacity:0.02;pointer-events:none;user-select:none;letter-spacing:-0.04em;">03</div>
-
-  <div style="max-width:1400px;margin:0 auto;padding:0 48px;position:relative;z-index:10;">
-
-    <div class="fade-up" style="display:flex;align-items:center;gap:12px;margin-bottom:80px;">
-      <div style="width:8px;height:8px;border-radius:9999px;background:hsl(38,65%,55%);"></div>
-      <span style="font-size:11px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);">Selected Works</span>
-    </div>
-
-    <div style="border-top:1px solid hsl(0,0%,15%);">
-
-      <!-- Project 01 -->
-      <div class="project-row fade-up delay-1" style="position:relative;border-bottom:1px solid hsl(0,0%,15%);padding:64px 32px;display:grid;grid-template-columns:1fr 2fr 1fr;gap:32px;align-items:center;transition:background 0.4s;cursor:pointer;" onmouseover="this.style.background='hsl(0,0%,7%)'" onmouseout="this.style.background='transparent'">
-        <div>
-          <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:hsl(0,0%,13%);transition:color 0.3s;line-height:1;">01</div>
-          <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);margin-top:16px;">Full-Stack Development</div>
-        </div>
-        <div>
-          <h3 style="font-family:'Playfair Display',serif;font-size:clamp(24px,3vw,44px);font-weight:700;margin-bottom:16px;color:hsl(36,27%,93%);">E-Commerce OS</h3>
-          <p style="font-size:15px;color:hsl(0,0%,55%);line-height:1.8;font-weight:300;margin-bottom:24px;max-width:500px;">A headless e-commerce platform built with Next.js, Stripe, and a custom CMS. Features real-time inventory and a highly optimized checkout flow.</p>
-          <div style="display:flex;flex-wrap:wrap;gap:10px;">
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">Next.js</span>
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">TypeScript</span>
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">Prisma</span>
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">PostgreSQL</span>
-          </div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;align-items:center;">
-          <a href="#" class="arrow-btn" style="color:hsl(36,27%,93%);text-decoration:none;">
-            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="transform:rotate(-45deg);"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
-          </a>
-        </div>
-      </div>
-
-      <!-- Project 02 -->
-      <div class="project-row fade-up delay-2" style="position:relative;border-bottom:1px solid hsl(0,0%,15%);padding:64px 32px;display:grid;grid-template-columns:1fr 2fr 1fr;gap:32px;align-items:center;transition:background 0.4s;cursor:pointer;" onmouseover="this.style.background='hsl(0,0%,7%)'" onmouseout="this.style.background='transparent'">
-        <div>
-          <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:hsl(0,0%,13%);line-height:1;">02</div>
-          <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);margin-top:16px;">Web Application</div>
-        </div>
-        <div>
-          <h3 style="font-family:'Playfair Display',serif;font-size:clamp(24px,3vw,44px);font-weight:700;margin-bottom:16px;color:hsl(36,27%,93%);">TaskFlow Pro</h3>
-          <p style="font-size:15px;color:hsl(0,0%,55%);line-height:1.8;font-weight:300;margin-bottom:24px;max-width:500px;">A collaborative project management tool for remote teams. Includes real-time updates via WebSockets and drag-and-drop kanban boards.</p>
-          <div style="display:flex;flex-wrap:wrap;gap:10px;">
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">React</span>
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">Node.js</span>
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">Socket.io</span>
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">MongoDB</span>
-          </div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;align-items:center;">
-          <a href="#" class="arrow-btn" style="color:hsl(36,27%,93%);text-decoration:none;">
-            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="transform:rotate(-45deg);"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
-          </a>
-        </div>
-      </div>
-
-      <!-- Project 03 -->
-      <div class="project-row fade-up delay-3" style="position:relative;border-bottom:1px solid hsl(0,0%,15%);padding:64px 32px;display:grid;grid-template-columns:1fr 2fr 1fr;gap:32px;align-items:center;transition:background 0.4s;cursor:pointer;" onmouseover="this.style.background='hsl(0,0%,7%)'" onmouseout="this.style.background='transparent'">
-        <div>
-          <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:hsl(0,0%,13%);line-height:1;">03</div>
-          <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);margin-top:16px;">Creative Portfolio</div>
-        </div>
-        <div>
-          <h3 style="font-family:'Playfair Display',serif;font-size:clamp(24px,3vw,44px);font-weight:700;margin-bottom:16px;color:hsl(36,27%,93%);">Maison Studio</h3>
-          <p style="font-size:15px;color:hsl(0,0%,55%);line-height:1.8;font-weight:300;margin-bottom:24px;max-width:500px;">An award-winning immersive portfolio for an interior design agency. Uses advanced WebGL scrolling effects and fluid page transitions.</p>
-          <div style="display:flex;flex-wrap:wrap;gap:10px;">
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">Three.js</span>
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">Framer Motion</span>
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">React</span>
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">GSAP</span>
-          </div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;align-items:center;">
-          <a href="#" class="arrow-btn" style="color:hsl(36,27%,93%);text-decoration:none;">
-            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="transform:rotate(-45deg);"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
-          </a>
-        </div>
-      </div>
-
-      <!-- Project 04 -->
-      <div class="project-row fade-up delay-4" style="position:relative;border-bottom:1px solid hsl(0,0%,15%);padding:64px 32px;display:grid;grid-template-columns:1fr 2fr 1fr;gap:32px;align-items:center;transition:background 0.4s;cursor:pointer;" onmouseover="this.style.background='hsl(0,0%,7%)'" onmouseout="this.style.background='transparent'">
-        <div>
-          <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:hsl(0,0%,13%);line-height:1;">04</div>
-          <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);margin-top:16px;">Data Visualization</div>
-        </div>
-        <div>
-          <h3 style="font-family:'Playfair Display',serif;font-size:clamp(24px,3vw,44px);font-weight:700;margin-bottom:16px;color:hsl(36,27%,93%);">Metrics Dashboard</h3>
-          <p style="font-size:15px;color:hsl(0,0%,55%);line-height:1.8;font-weight:300;margin-bottom:24px;max-width:500px;">Financial analytics dashboard visualizing complex datasets. Aggregates data from multiple APIs and renders interactive charts.</p>
-          <div style="display:flex;flex-wrap:wrap;gap:10px;">
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">Vue.js</span>
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">D3.js</span>
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">Express</span>
-            <span style="font-size:11px;padding:4px 12px;border:1px solid hsl(0,0%,15%);color:hsl(0,0%,55%);letter-spacing:0.05em;">Redis</span>
-          </div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;align-items:center;">
-          <a href="#" class="arrow-btn" style="color:hsl(36,27%,93%);text-decoration:none;">
-            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="transform:rotate(-45deg);"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
-          </a>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-
-<!-- ============================================================
-     EXPERIENCE — Section 04
-============================================================ -->
-<section id="experience" style="padding:128px 0;position:relative;background:hsl(0,0%,4%);overflow:hidden;">
-  <div style="position:absolute;top:0;right:0;font-family:'Playfair Display',serif;font-size:clamp(160px,25vw,400px);line-height:1;font-weight:700;color:hsl(36,27%,93%);opacity:0.02;pointer-events:none;user-select:none;letter-spacing:-0.04em;">04</div>
-
-  <div style="max-width:1400px;margin:0 auto;padding:0 48px;position:relative;z-index:10;display:flex;flex-wrap:wrap;gap:64px;">
-
-    <!-- Left sticky label -->
-    <div class="fade-up" style="flex:0 0 300px;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:32px;">
-        <div style="width:8px;height:8px;border-radius:9999px;background:hsl(38,65%,55%);"></div>
-        <span style="font-size:11px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);">Journey</span>
-      </div>
-      <h3 style="font-family:'Playfair Display',serif;font-size:clamp(32px,4vw,48px);font-weight:700;line-height:1.2;margin-bottom:24px;color:hsl(36,27%,93%);">Experience &<br>Education.</h3>
-      <p style="font-size:15px;color:hsl(0,0%,55%);line-height:1.8;font-weight:300;">A timeline of my professional career, focusing on environments where design and technology intersect.</p>
-    </div>
-
-    <!-- Right timeline -->
-    <div style="flex:1;min-width:280px;position:relative;">
-      <div style="position:absolute;left:7px;top:16px;bottom:16px;width:1px;background:hsl(0,0%,15%);z-index:0;"></div>
-
-      <!-- Entry 1 -->
-      <div class="timeline-entry fade-up delay-2" style="position:relative;padding-left:64px;margin-bottom:80px;">
-        <div class="timeline-dot" style="position:absolute;left:0;top:8px;"></div>
-        <div style="display:grid;grid-template-columns:1fr 2fr;gap:24px;">
-          <div>
-            <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:hsl(38,65%,55%);margin-bottom:8px;font-weight:500;">2021 — Present</div>
-            <h4 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:hsl(36,27%,93%);">TechCorp Global</h4>
-          </div>
-          <div>
-            <h5 style="font-size:17px;font-weight:500;margin-bottom:12px;color:hsl(36,27%,93%);">Senior Software Engineer</h5>
-            <p style="font-size:15px;color:hsl(0,0%,55%);line-height:1.8;font-weight:300;">Architecting high-performance web applications and leading a team of multidisciplinary engineers. Championed a complete rebuild of the core platform resulting in a 40% performance increase.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Entry 2 -->
-      <div class="timeline-entry fade-up delay-3" style="position:relative;padding-left:64px;margin-bottom:80px;">
-        <div class="timeline-dot" style="position:absolute;left:0;top:8px;"></div>
-        <div style="display:grid;grid-template-columns:1fr 2fr;gap:24px;">
-          <div>
-            <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:hsl(38,65%,55%);margin-bottom:8px;font-weight:500;">2018 — 2021</div>
-            <h4 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:hsl(36,27%,93%);">Studio Innovate</h4>
-          </div>
-          <div>
-            <h5 style="font-size:17px;font-weight:500;margin-bottom:12px;color:hsl(36,27%,93%);">Creative Developer</h5>
-            <p style="font-size:15px;color:hsl(0,0%,55%);line-height:1.8;font-weight:300;">Bridged the gap between design and engineering, creating award-winning interactive experiences for global brands. Specialized in web animations and micro-interactions.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Entry 3 -->
-      <div class="timeline-entry fade-up delay-4" style="position:relative;padding-left:64px;">
-        <div class="timeline-dot" style="position:absolute;left:0;top:8px;"></div>
-        <div style="display:grid;grid-template-columns:1fr 2fr;gap:24px;">
-          <div>
-            <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:hsl(38,65%,55%);margin-bottom:8px;font-weight:500;">2016 — 2018</div>
-            <h4 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:hsl(36,27%,93%);">Digital Startup Inc.</h4>
-          </div>
-          <div>
-            <h5 style="font-size:17px;font-weight:500;margin-bottom:12px;color:hsl(36,27%,93%);">Frontend Engineer</h5>
-            <p style="font-size:15px;color:hsl(0,0%,55%);line-height:1.8;font-weight:300;">Developed and maintained client-facing interfaces. Implemented modern state management and improved accessibility standards across the product suite.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-
-<!-- ============================================================
-     CONTACT — Section 05
-============================================================ -->
-<section id="contact" style="padding:128px 0;position:relative;background:hsl(0,0%,7%);overflow:hidden;">
-  <div style="position:absolute;bottom:0;right:0;transform:translateY(25%);font-family:'Playfair Display',serif;font-size:clamp(160px,25vw,400px);line-height:1;font-weight:700;color:hsl(36,27%,93%);opacity:0.02;pointer-events:none;user-select:none;letter-spacing:-0.04em;">05</div>
-
-  <div style="max-width:1400px;margin:0 auto;padding:0 48px;position:relative;z-index:10;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:64px;">
-
-    <!-- Left -->
-    <div class="fade-up">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:32px;">
-        <div style="width:8px;height:8px;border-radius:9999px;background:hsl(38,65%,55%);"></div>
-        <span style="font-size:11px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;color:hsl(0,0%,55%);">Inquiries</span>
-      </div>
-      <h3 style="font-family:'Playfair Display',serif;font-size:clamp(36px,5vw,72px);font-weight:700;line-height:1.1;margin-bottom:32px;color:hsl(36,27%,93%);">
-        Let's work<br><span class="text-gradient" style="font-style:italic;font-weight:300;">together.</span>
-      </h3>
-      <p style="font-size:16px;color:hsl(0,0%,55%);font-weight:300;line-height:1.8;margin-bottom:48px;max-width:360px;">Have a project in mind, or just want to say hello? Fill out the form or reach out directly via email.</p>
-
-      <div style="display:flex;gap:16px;flex-wrap:wrap;">
-        <!-- Email -->
-        <a href="mailto: shkgeeeee@gmail.com" class="social-btn" title="Email">
-          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
-        </a>
-        <!-- GitHub -->
-        <a href="#" class="social-btn" title="GitHub">
-          <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.373 0 12c0 5.303 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
-        </a>
-        <!-- LinkedIn -->
-        <a href="#" class="social-btn" title="LinkedIn">
-          <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-        </a>
-        <!-- WhatsApp -->
-<a href="https://wa.me/923016305418" class="social-btn" title="WhatsApp">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-  <path d="M12 2C6.48 2 2 6.48 2 12c0 1.93.5 3.74 1.38 5.31L2 22l4.8-1.26C8.26 21.55 10.08 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.74 0-3.37-.45-4.8-1.24l-.34-.2-2.85.75.76-2.78-.22-.35A7.96 7.96 0 014 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8zm4.2-5.8c-.23-.12-1.36-.67-1.57-.74-.21-.08-.36-.12-.51.12-.15.23-.59.74-.72.9-.13.15-.26.17-.49.06-.23-.12-.96-.35-1.83-1.11-.67-.6-1.12-1.33-1.25-1.55-.13-.23-.01-.35.1-.47.1-.1.23-.26.34-.39.11-.13.15-.23.23-.38.08-.15.04-.29-.02-.41-.06-.12-.51-1.23-.7-1.68-.18-.44-.37-.38-.51-.39h-.44c-.15 0-.39.06-.59.29-.2.23-.77.75-.77 1.82 0 1.07.79 2.1.9 2.24.11.15 1.55 2.37 3.76 3.33.53.23.94.37 1.26.47.53.17 1.02.15 1.4.09.43-.06 1.36-.56 1.55-1.1.19-.54.19-1 .13-1.1-.06-.1-.21-.15-.44-.27z"/>
-          </svg>
-        </a>
-      </div>
-    </div>
-
-    <!-- Right — Form -->
-    <div class="fade-up delay-3">
-      <form id="contact-form" style="display:flex;flex-direction:column;gap:40px;margin-top:32px;" onsubmit="submitForm(event)">
-
-        <div style="position:relative;">
-          <input type="text" id="f-name" placeholder="Your Name" required class="contact-input" style="width:100%;background:transparent;border:none;border-bottom:1px solid hsl(0,0%,20%);padding:16px 0;font-size:17px;color:hsl(36,27%,93%);outline:none;font-family:'DM Sans',sans-serif;">
-          <span class="input-line"></span>
-        </div>
-
-        <div style="position:relative;">
-          <input type="email" id="f-email" placeholder="Email Address" required class="contact-input" style="width:100%;background:transparent;border:none;border-bottom:1px solid hsl(0,0%,20%);padding:16px 0;font-size:17px;color:hsl(36,27%,93%);outline:none;font-family:'DM Sans',sans-serif;">
-          <span class="input-line"></span>
-        </div>
-
-        <div style="position:relative;">
-          <textarea id="f-message" placeholder="Project Details" required rows="4" class="contact-input" style="width:100%;background:transparent;border:none;border-bottom:1px solid hsl(0,0%,20%);padding:16px 0;font-size:17px;color:hsl(36,27%,93%);outline:none;resize:none;font-family:'DM Sans',sans-serif;"></textarea>
-          <span class="input-line"></span>
-        </div>
-
-        <button type="submit" style="display:inline-flex;align-items:center;gap:16px;background:hsl(38,65%,55%);color:hsl(0,0%,4%);padding:16px 32px;font-size:13px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;border:none;cursor:pointer;width:fit-content;transition:opacity 0.3s;font-family:'DM Sans',sans-serif;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">
-          Send Request
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
-        </button>
-
-      </form>
-    </div>
-
-  </div>
-</section>
-
-
-<!-- ============================================================
-     FOOTER
-============================================================ -->
-<footer style="background:hsl(0,0%,4%);border-top:1px solid rgba(255,255,255,0.06);padding:32px 48px;">
-  <div style="max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:hsl(0,0%,40%);font-weight:500;">
-    <div><span style="color:hsl(36,27%,93%);">A.K</span> © <span id="year"></span></div>
-    <div>Crafted with passion</div>
-    <div style="display:flex;gap:24px;">
-      <a href="#" style="color:hsl(0,0%,40%);text-decoration:none;transition:color 0.3s;" onmouseover="this.style.color='hsl(38,65%,55%)'" onmouseout="this.style.color='hsl(0,0%,40%)'">GH</a>
-      <a href="#" style="color:hsl(0,0%,40%);text-decoration:none;transition:color 0.3s;" onmouseover="this.style.color='hsl(38,65%,55%)'" onmouseout="this.style.color='hsl(0,0%,40%)'">IN</a>
-      <a href="#" style="color:hsl(0,0%,40%);text-decoration:none;transition:color 0.3s;" onmouseover="this.style.color='hsl(38,65%,55%)'" onmouseout="this.style.color='hsl(0,0%,40%)'">TW</a>
-    </div>
-  </div>
-</footer>
-
-
-<!-- ============================================================
-     JAVASCRIPT
-============================================================ -->
-<script>
-  // Set year
-  document.getElementById("year").textContent = new Date().getFullYear();
-
-  // Navbar scroll effect
-  const navbar = document.getElementById("navbar");
-  window.addEventListener("scroll", () => {
-    if (window.scrollY > 20) {
-      navbar.style.background = "rgba(10,10,10,0.85)";
-      navbar.style.backdropFilter = "blur(12px)";
-      navbar.style.borderBottom = "1px solid rgba(212,168,67,0.15)";
-      navbar.style.padding = "16px 0";
-    } else {
-      navbar.style.background = "transparent";
-      navbar.style.backdropFilter = "none";
-      navbar.style.borderBottom = "none";
-      navbar.style.padding = "24px 0";
-    }
-  });
-
-  // Mobile nav toggle
-  const toggle = document.getElementById("mobile-toggle");
-  const mobileNav = document.getElementById("mobile-nav");
-  const iconMenu = document.getElementById("icon-menu");
-  const iconClose = document.getElementById("icon-close");
-
-  toggle.addEventListener("click", () => {
-    const open = mobileNav.style.display === "flex";
-    mobileNav.style.display = open ? "none" : "flex";
-    iconMenu.style.display = open ? "block" : "none";
-    iconClose.style.display = open ? "none" : "block";
-  });
-
-  function closeMobile() {
-    mobileNav.style.display = "none";
-    iconMenu.style.display = "block";
-    iconClose.style.display = "none";
+      res(res) {
+        return {
+          statusCode: res.statusCode,
+        };
+      },
+    },
+  }),
+);
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use("/api", router);
+
+export default app;
+
+============================================================
+FILE: artifacts/api-server/src/index.ts
+============================================================
+
+import app from "./app";
+import { logger } from "./lib/logger";
+
+const rawPort = process.env["PORT"];
+
+if (!rawPort) {
+  throw new Error(
+    "PORT environment variable is required but was not provided.",
+  );
+}
+
+const port = Number(rawPort);
+
+if (Number.isNaN(port) || port <= 0) {
+  throw new Error(`Invalid PORT value: "${rawPort}"`);
+}
+
+app.listen(port, (err) => {
+  if (err) {
+    logger.error({ err }, "Error listening on port");
+    process.exit(1);
   }
 
-  // Responsive mobile nav visibility
-  function handleResize() {
-    const desktopNav = document.getElementById("desktop-nav");
-    if (window.innerWidth < 768) {
-      desktopNav.style.display = "none";
-      toggle.style.display = "block";
-    } else {
-      desktopNav.style.display = "flex";
-      toggle.style.display = "none";
-      mobileNav.style.display = "none";
-    }
-  }
-  handleResize();
-  window.addEventListener("resize", handleResize);
+  logger.info({ port }, "Server listening");
+});
 
-  // Scroll fade-in animations
-  const fadeEls = document.querySelectorAll(".fade-up, .fade-left");
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("visible");
-      }
+
+============================================================
+FILE: artifacts/api-server/src/routes/index.ts
+============================================================
+
+import { Router, type IRouter } from "express";
+import healthRouter from "./health";
+import openaiRouter from "./openai/index";
+import resumeRouter from "./resume";
+
+const router: IRouter = Router();
+
+router.use(healthRouter);
+router.use("/openai", openaiRouter);
+router.use(resumeRouter);
+
+export default router;
+
+
+============================================================
+FILE: artifacts/api-server/src/routes/health.ts
+============================================================
+
+import { Router, type IRouter } from "express";
+import { HealthCheckResponse } from "@workspace/api-zod";
+
+const router: IRouter = Router();
+
+router.get("/healthz", (_req, res) => {
+  const data = HealthCheckResponse.parse({ status: "ok" });
+  res.json(data);
+});
+
+export default router;
+
+
+============================================================
+FILE: artifacts/api-server/src/routes/openai/conversations.ts
+============================================================
+
+import { Router, type IRouter } from "express";
+import { db, conversations, messages } from "@workspace/db";
+import { eq, desc } from "drizzle-orm";
+import {
+  CreateOpenaiConversationBody,
+  SendOpenaiMessageBody,
+} from "@workspace/api-zod";
+import { openai } from "@workspace/integrations-openai-ai-server";
+
+const router: IRouter = Router();
+
+router.get("/conversations", async (req, res) => {
+  try {
+    const convs = await db
+      .select()
+      .from(conversations)
+      .orderBy(desc(conversations.createdAt));
+    res.json(convs);
+  } catch (err) {
+    req.log.error({ err }, "Failed to list conversations");
+    res.status(500).json({ error: "Failed to list conversations" });
+  }
+});
+
+router.post("/conversations", async (req, res) => {
+  const parsed = CreateOpenaiConversationBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
+  try {
+    const [conv] = await db
+      .insert(conversations)
+      .values({ title: parsed.data.title })
+      .returning();
+    res.status(201).json(conv);
+  } catch (err) {
+    req.log.error({ err }, "Failed to create conversation");
+    res.status(500).json({ error: "Failed to create conversation" });
+  }
+});
+
+router.get("/conversations/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  try {
+    const [conv] = await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.id, id));
+    if (!conv) {
+      res.status(404).json({ error: "Conversation not found" });
+      return;
+    }
+    const msgs = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.conversationId, id))
+      .orderBy(messages.createdAt);
+    res.json({ ...conv, messages: msgs });
+  } catch (err) {
+    req.log.error({ err }, "Failed to get conversation");
+    res.status(500).json({ error: "Failed to get conversation" });
+  }
+});
+
+router.delete("/conversations/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  try {
+    const [conv] = await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.id, id));
+    if (!conv) {
+      res.status(404).json({ error: "Conversation not found" });
+      return;
+    }
+    await db.delete(messages).where(eq(messages.conversationId, id));
+    await db.delete(conversations).where(eq(conversations.id, id));
+    res.status(204).end();
+  } catch (err) {
+    req.log.error({ err }, "Failed to delete conversation");
+    res.status(500).json({ error: "Failed to delete conversation" });
+  }
+});
+
+router.get("/conversations/:id/messages", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  try {
+    const msgs = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.conversationId, id))
+      .orderBy(messages.createdAt);
+    res.json(msgs);
+  } catch (err) {
+    req.log.error({ err }, "Failed to list messages");
+    res.status(500).json({ error: "Failed to list messages" });
+  }
+});
+
+router.post("/conversations/:id/messages", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  const parsed = SendOpenaiMessageBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
+
+  const [conv] = await db
+    .select()
+    .from(conversations)
+    .where(eq(conversations.id, id));
+  if (!conv) {
+    res.status(404).json({ error: "Conversation not found" });
+    return;
+  }
+
+  const existingMessages = await db
+    .select()
+    .from(messages)
+    .where(eq(messages.conversationId, id))
+    .orderBy(messages.createdAt);
+
+  await db.insert(messages).values({
+    conversationId: id,
+    role: "user",
+    content: parsed.data.content,
+  });
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  const chatMessages = [
+    ...existingMessages.map((m) => ({
+      role: m.role as "user" | "assistant" | "system",
+      content: m.content,
+    })),
+    { role: "user" as const, content: parsed.data.content },
+  ];
+
+  let fullResponse = "";
+
+  try {
+    const stream = await openai.chat.completions.create({
+      model: "gpt-5.2",
+      max_completion_tokens: 8192,
+      messages: chatMessages,
+      stream: true,
     });
-  }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" });
 
-  fadeEls.forEach(el => observer.observe(el));
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) {
+        fullResponse += content;
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
+    }
 
-  // Contact form
-  function submitForm(e) {
-    e.preventDefault();
-    const name = document.getElementById("f-name").value;
-    const email = document.getElementById("f-email").value;
-    const message = document.getElementById("f-message").value;
-    if (!name || !email || !message) return;
+    await db.insert(messages).values({
+      conversationId: id,
+      role: "assistant",
+      content: fullResponse,
+    });
 
-    // Show success (in real project connect to a backend/formspree/emailjs)
-    const btn = e.target.querySelector("button[type=submit]");
-    const orig = btn.innerHTML;
-    btn.innerHTML = "Message Sent ✓";
-    btn.style.background = "hsl(142,71%,40%)";
-    btn.style.color = "white";
-    setTimeout(() => {
-      btn.innerHTML = orig;
-      btn.style.background = "hsl(38,65%,55%)";
-      btn.style.color = "hsl(0,0%,4%)";
-      e.target.reset();
-    }, 3000);
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    res.end();
+  } catch (err) {
+    req.log.error({ err }, "Failed to stream chat response");
+    res.write(`data: ${JSON.stringify({ error: "Failed to get AI response" })}\n\n`);
+    res.end();
   }
-</script>
+});
 
-<script src="https://replit-cdn.com/replit-pill/replit-pill.global.js" data-repl-id="a06ce7c8-152f-4ac9-8be5-68afa9d09eb1"></script></body>
-    </html>
-    
+export default router;
+
+
+============================================================
+FILE: artifacts/api-server/src/routes/openai/image.ts
+============================================================
+
+import { Router, type IRouter } from "express";
+import { GenerateOpenaiImageBody } from "@workspace/api-zod";
+import { generateImageBuffer } from "@workspace/integrations-openai-ai-server/image";
+
+const router: IRouter = Router();
+
+router.post("/generate-image", async (req, res) => {
+  const parsed = GenerateOpenaiImageBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
+
+  try {
+    const size = (parsed.data.size as "1024x1024" | "512x512" | "256x256") ?? "1024x1024";
+    const buffer = await generateImageBuffer(parsed.data.prompt, size);
+    res.json({ b64_json: buffer.toString("base64") });
+  } catch (err) {
+    req.log.error({ err }, "Failed to generate image");
+    res.status(500).json({ error: "Failed to generate image" });
+  }
+});
+
+export default router;
+
+
+============================================================
+FILE: artifacts/api-server/src/routes/openai/index.ts
+============================================================
+
+import { Router, type IRouter } from "express";
+import conversationsRouter from "./conversations";
+import imageRouter from "./image";
+
+const router: IRouter = Router();
+
+router.use(conversationsRouter);
+router.use(imageRouter);
+
+export default router;
+
+
+============================================================
+FILE: artifacts/api-server/src/routes/resume.ts
+============================================================
+
+import { Router, type IRouter } from "express";
+import { GenerateResumeBody } from "@workspace/api-zod";
+import { openai } from "@workspace/integrations-openai-ai-server";
+
+const router: IRouter = Router();
+
+router.post("/resume/generate", async (req, res) => {
+  const parsed = GenerateResumeBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
+
+  const {
+    fullName,
+    email,
+    phone,
+    location,
+    summary,
+    experience,
+    education,
+    skills,
+    targetRole,
+  } = parsed.data;
+
+  const prompt = `Create a professional resume for ${fullName} applying for the role of ${targetRole}.
+
+Personal Information:
+- Email: ${email}
+${phone ? `- Phone: ${phone}` : ""}
+${location ? `- Location: ${location}` : ""}
+
+${summary ? `Professional Summary:\n${summary}` : ""}
+${experience ? `Work Experience:\n${experience}` : ""}
+${education ? `Education:\n${education}` : ""}
+${skills ? `Skills:\n${skills}` : ""}
+
+Generate a complete, professional resume in plain text format with clear sections. 
+Make it ATS-friendly, use action verbs, and highlight quantifiable achievements where possible.
+Format it with clear section headers using === markers.
+Include: CONTACT INFORMATION, PROFESSIONAL SUMMARY, WORK EXPERIENCE, EDUCATION, SKILLS sections.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5.2",
+      max_completion_tokens: 8192,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an expert resume writer with 20 years of experience creating professional, ATS-optimized resumes that get results. You write clear, concise, impactful resumes.",
+        },
+        { role: "user", content: prompt },
+      ],
+    });
+
+    const resumeText = response.choices[0]?.message?.content ?? "";
+
+    const sectionRegex = /===\s*([^=]+?)\s*===/g;
+    const sections: Record<string, string> = {};
+    let match;
+    const parts = resumeText.split(/===\s*[^=]+?\s*===/);
+
+    let i = 0;
+    while ((match = sectionRegex.exec(resumeText)) !== null) {
+      const sectionName = match[1].trim();
+      sections[sectionName] = parts[i + 1]?.trim() ?? "";
+      i++;
+    }
+
+    res.json({ resumeText, sections });
+  } catch (err) {
+    req.log.error({ err }, "Failed to generate resume");
+    res.status(500).json({ error: "Failed to generate resume" });
+  }
+});
+
+export default router;
+
+
+============================================================
+FILE: artifacts/ai-tools-suite/src/App.tsx
+============================================================
+
+import { Switch, Route, Router as WouterRouter } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "@/pages/not-found";
+
+import Home from "./pages/home";
+import ChatTools from "./pages/chat";
+import ImageGenerator from "./pages/image-generator";
+import ResumeMaker from "./pages/resume-maker";
+
+const queryClient = new QueryClient();
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/chat" component={ChatTools} />
+      <Route path="/image-generator" component={ImageGenerator} />
+      <Route path="/resume" component={ResumeMaker} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function App() {
+  return (   <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <Router />
+        </WouterRouter>
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
+
+
+============================================================
+FILE: artifacts/ai-tools-suite/src/main.tsx
+============================================================
+
+import { createRoot } from "react-dom/client";
+import App from "./App";
+import "./index.css";
+
+createRoot(document.getElementById("root")!).render(<App />);
+
+
+============================================================
+FILE: artifacts/ai-tools-suite/src/index.css
+============================================================
+
+@import url('https://fonts.googleapis.com/css2?family=Cal+Sans:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: var(--primary-border);
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: var(--secondary-border);
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-border: var(--muted-border);
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-border: var(--accent-border);
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: var(--destructive-border);
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-primary-border: var(--sidebar-primary-border);
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-accent-border: var(--sidebar-accent-border);
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Cal Sans', sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Force Dark Mode for this aesthetic */
+:root, .dark {
+  --button-outline: rgba(255,255,255, .10);
+  --badge-outline: rgba(255,255,255, .05);
+
+  --opaque-button-border-intensity: 9;
+
+  --elevate-1: rgba(255,255,255, .04);
+  --elevate-2: rgba(255,255,255, .09);
+
+  /* Deep Dark Navy */
+  --background: 224 71% 4%;
+  --foreground: 210 40% 98%;
+  
+  --border: 215 28% 17%;
+  --input: 215 28% 17%;
+  --ring: 262 83% 58%;
+
+  /* Slightly lighter navy for cards */
+  --card: 222 47% 8%;
+  --card-foreground: 210 40% 98%;
+  --card-border: 215 28% 17%;
+
+  --popover: 222 47% 8%;
+  --popover-foreground: 210 40% 98%;
+  --popover-border: 215 28% 17%;
+
+  /* Vibrant Purple */
+  --primary: 262 83% 58%;
+  --primary-foreground: 210 40% 98%;
+
+  /* Indigo Secondary */
+  --secondary: 226 70% 20%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 215 28% 15%;
+  --muted-foreground: 215 20% 65%;
+
+  --accent: 262 83% 25%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+
+  /* Sidebar Theme - Deepest Navy */
+  --sidebar: 224 71% 3%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-border: 215 28% 12%;
+  --sidebar-primary: 262 83% 58%;
+  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-accent: 262 83% 20%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-ring: 262 83% 58%;
+
+  --radius: 0.75rem;
+
+  --shadow-2xs: 0px 2px 0px 0px rgba(0,0,0,0.5);
+  --shadow-xs: 0px 2px 0px 0px rgba(0,0,0,0.5);
+  --shadow-sm: 0px 2px 0px 0px rgba(0,0,0,0.5), 0px 1px 2px -1px rgba(0,0,0,0.5);
+  --shadow: 0px 2px 0px 0px rgba(0,0,0,0.5), 0px 1px 2px -1px rgba(0,0,0,0.5);
+  --shadow-md: 0px 2px 0px 0px rgba(0,0,0,0.5), 0px 2px 4px -1px rgba(0,0,0,0.5);
+  --shadow-lg: 0px 2px 0px 0px rgba(0,0,0,0.5), 0px 4px 6px -1px rgba(0,0,0,0.5);
+  --shadow-xl: 0px 2px 0px 0px rgba(0,0,0,0.5), 0px 8px 10px -1px rgba(0,0,0,0.5);
+  --shadow-2xl: 0px 2px 0px 0px rgba(0,0,0,0.5);
+  
+  --shadow-glow: 0px 0px 20px 0px hsl(262 83% 58% / 0.3);
+
+  /* Automatically computed borders */
+  --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply tracking-tight;
+  }
+}
+
+/* Custom Scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+@layer utilities {
+  input[type="search"]::-webkit-search-cancel-button {
+    @apply hidden;
+  }
+
+  [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+  }
+
+  .glass-panel {
+    @apply bg-background/60 backdrop-blur-xl border border-white/10;
+  }
+
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    z-index: -1;
+  }
+
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
+  }
+
+  .border.toggle-elevate::before { inset: -1px; }
+
+  .hover-elevate:not(.no-default-hover-elevate),
+  .active-elevate:not(.no-default-active-elevate),
+  .hover-elevate-2:not(.no-default-hover-elevate),
+  .active-elevate-2:not(.no-default-active-elevate) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    z-index: 999;
+  }
+
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
+  }
+
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after {
+    inset: -1px;
+  }
+}
+
+
+============================================================
+FILE: artifacts/ai-tools-suite/src/lib/utils.ts
+============================================================
+
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+
+============================================================
+FILE: artifacts/ai-tools-suite/src/hooks/use-chat-stream.ts
+============================================================
+
+import { useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { getListOpenaiMessagesQueryKey } from "@workspace/api-client-react";
+
+interface UseChatStreamOptions {
+  conversationId: number;
+  onFinished?: () => void;
+}
+
+export function useChatStream({ conversationId, onFinished }: UseChatStreamOptions) {
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamedContent, setStreamedContent] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  const sendMessage = useCallback(
+    async (content: string) => {
+      setIsStreaming(true);
+      setStreamedContent("");
+      setError(null);
+
+      try {
+        const response = await fetch(`/api/openai/conversations/${conversationId}/messages`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ content }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to send message");
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (!reader) {
+          throw new Error("Failed to initialize stream reader");
+        }
+
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            break;
+          }
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split("\n");
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const dataStr = line.slice(6).trim();
+              if (!dataStr || dataStr === "[DONE]") continue;
+
+              try {
+                const data = JSON.parse(dataStr);
+                if (data.content) {
+                  setStreamedContent((prev) => prev + data.content);
+                }
+                if (data.done) {
+                  setIsStreaming(false);
+                  queryClient.invalidateQueries({
+                    queryKey: getListOpenaiMessagesQueryKey(conversationId)
+                  });
+                  if (onFinished) onFinished();
+                }
+              } catch (e) {
+                console.error("Failed to parse SSE chunk:", e);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
+        setIsStreaming(false);
+      }
+    },
+    [conversationId, queryClient, onFinished]
+  );
+
+  return {
+    sendMessage,
+    isStreaming,
+    streamedContent,
+    error,
+  };
+}
+
+
+============================================================
+FILE: artifacts/ai-tools-suite/src/components/layout.tsx
+============================================================
+
+import { Link, useLocation } from "wouter";
+import { MessageSquare, Image as ImageIcon, FileText, Home, Sparkles, Download } from "lucide-react";
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarTrigger
+} from "@/components/ui/sidebar";
+
+const navItems = [
+  { title: "Home", url: "/", icon: Home },
+  { title: "Chat Assistant", url: "/chat", icon: MessageSquare },
+  { title: "Image Generator", url: "/image-generator", icon: ImageIcon },
+  { title: "Resume Maker", url: "/resume", icon: FileText },
+];
+
+export function AppLayout({ children }: { children: React.ReactNode }) {
+  const [location] = useLocation();
+
+  const style = {
+    "--sidebar-width": "18rem",
+    "--sidebar-width-icon": "4rem",
+  } as React.CSSProperties;
+
+  return (
+    <SidebarProvider style={style}>
+      <div className="flex min-h-screen w-full bg-background dark text-foreground overflow-hidden">
+        <Sidebar variant="inset" className="border-r border-white/5 bg-background/50 backdrop-blur-xl">
+          <SidebarHeader className="p-6">
+            <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-glow">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-display text-lg font-bold leading-tight">AI Tools Suite</span>
+                <span className="text-xs text-muted-foreground font-medium">Pro Edition</span>
+              </div>
+            </Link>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                Applications
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu className="gap-2">
+                  {navItems.map((item) => {
+                    const isActive = location === item.url || (item.url !== "/" && location.startsWith(item.url));
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+                          <Link href={item.url} className={`
+                            flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300
+                            ${isActive 
+                              ? 'bg-primary/15 text-primary font-medium' 
+                              : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'
+                            }
+                          `}>
+                            <item.icon className={`h-5 w-5 ${isActive ? 'text-primary' : ''}`} />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter className="p-4 border-t border-white/5">
+            <a
+              href="/ai-tools-suite-code.tar.gz"download="ai-tools-suite-code.tar.gz"
+              data-testid="link-download-code"
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-medium transition-all duration-200 border border-primary/20"
+            >
+              <Download className="h-5 w-5 shrink-0" />
+              <span>Download Source Code</span>
+            </a>
+          </SidebarFooter>
+        </Sidebar>
+        
+        <div className="flex flex-col flex-1 relative min-w-0">
+          <header className="absolute top-0 left-0 right-0 z-50 flex items-center p-4 md:p-6 bg-gradient-to-b from-background/80 to-transparent backdrop-blur-sm pointer-events-none">
+            <SidebarTrigger className="pointer-events-auto bg-card border border-white/10 shadow-lg" data-testid="button-sidebar-toggle" />
+          </header>
+          <main className="flex-1 h-full overflow-hidden relative z-0">
+            {children}
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}
+
+
+============================================================
+FILE: artifacts/ai-tools-suite/src/pages/home.tsx
+============================================================
+
+import { Link } from "wouter";
+import { motion } from "framer-motion";
+import { AppLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, MessageSquare, Image as ImageIcon, FileText, Download, Code2 } from "lucide-react";
+
+export default function Home() {
+  const features = [
+    {
+      title: "Chat Assistant",
+      description: "Advanced conversational AI for brainstorming, coding, and problem-solving.",
+      icon: MessageSquare,
+      link: "/chat",
+      img: "ai-chat-icon.png",
+      color: "from-blue-500 to-indigo-600"
+    },
+    {
+      title: "Image Generator",
+      description: "Transform text descriptions into stunning, high-resolution visual art.",
+      icon: ImageIcon,
+      link: "/image-generator",
+      img: "ai-image-icon.png",
+      color: "from-purple-500 to-fuchsia-600"
+    },
+    {
+      title: "Resume Maker",
+      description: "Craft professional, ATS-friendly resumes instantly with AI optimization.",
+      icon: FileText,
+      link: "/resume",
+      img: "ai-resume-icon.png",
+      color: "from-emerald-500 to-purple-600"
+    }
+  ];
+
+  return (
+    <AppLayout>
+      <div className="relative min-h-screen overflow-y-auto overflow-x-hidden pb-20">
+        {/* Background elements */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={`${import.meta.env.BASE_URL}images/hero-bg.png`} 
+            alt="Abstract background" 
+            className="w-full h-full object-cover opacity-40 mix-blend-screen"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/80 to-background" />
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-6 pt-32 pb-12 flex flex-col items-center text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary font-medium text-sm mb-8"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+            </span>
+            Replit AI Integration
+          </motion.div>
+
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-5xl md:text-7xl font-bold font-display tracking-tight mb-6"
+          >
+            Your Ultimate <br className="hidden md:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-primary to-fuchsia-400">
+              AI Tools Workspace
+            </span>
+          </motion.h1>
+
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-12"
+          >
+            Unlock the power of next-generation artificial intelligence. Generate stunning images, craft professional resumes, and engage with our advanced chat assistant all in one sophisticated suite.
+          </motion.p>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mt-8"
+          >
+            {features.map((feature, idx) => (
+              <Link key={idx} href={feature.link}>
+                <div className="group relative h-full bg-card/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 md:p-8 hover:bg-card/60 hover:border-primary/30 transition-all duration-500 hover:-translate-y-2 cursor-pointer overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-10 transition-opacity duration-500 z-0 pointer-events-none" style={{ backgroundImage: `var(--tw-gradient-stops)` }} />
+                  
+                  <div className="relative z-10 flex flex-col items-center text-center">
+                    <div className="w-24 h-24 mb-6 rounded-2xl overflow-hidden shadow-2xl relative">
+                       <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-20`} />
+                       <img src={`${import.meta.env.BASE_URL}images/${feature.img}`} alt={feature.title} className="w-full h-full object-cover" />
+                    </div>
+                    <h3 className="text-2xl font-bold font-display mb-3 text-foreground group-hover:text-primary transition-colors">{feature.title}</h3>
+                    <p className="text-muted-foreground mb-8 text-sm leading-relaxed">{feature.description}</p>
+                    <div className="mt-auto flex items-center justify-center gap-2 text-primary font-medium opacity-80 group-hover:opacity-100 group-hover:gap-3 transition-all">
+                      Launch Tool <ArrowRight className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </motion.div>
+
+          {/* Download Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="mt-16 w-full max-w-2xl mx-auto"
+          >
+            <div className="bg-card/40 backdrop-blur-md border border-primary/20 rounded-3xl p-8 text-center">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <Code2 className="h-7 w-7 text-primary" />
+                <h2 className="text-2xl font-bold font-display">Source Code</h2>
+              </div>
+              <p className="text-muted-foreground mb-6 text-sm">
+                Download the complete source code of this website — frontend, backend, database and API files.
+              </p>
+              <a
+                href="/ai-tools-suite-code.tar.gz"
+                download="ai-tools-suite-code.tar.gz"
+                data-testid="link-download-code-home"
+              >
+                <Button size="lg" className="gap-3 px-8 py-4 text-base font-semibold bg-primary hover:bg-primary/90 w-full sm:w-auto">
+                  <Download className="h-5 w-5" />
+                  Download Source Code (.tar.gz)
+                </Button>
+              </a>
+              <p className="text-xs text-muted-foreground mt-4">
+                ~51 KB compressed — Open with ZArchiver or RAR on Android
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </AppLayout>
+  );
+}
+
+
+============================================================
+FILE: artifacts/ai-tools-suite/src/pages/chat.tsx
+============================================================
+
+import { useState, useRef, useEffect } from "react";
+import { AppLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Plus, Send, MessageSquare, Trash2, Loader2, Bot, User } from "lucide-react";
+import { useChatStream } from "@/hooks/use-chat-stream";
+import { 
+  useListOpenaiConversations, 
+  useCreateOpenaiConversation, 
+  useGetOpenaiConversation,
+  useDeleteOpenaiConversation,
+  useListOpenaiMessages
+} from "@workspace/api-client-react";
+import { format } from "date-fns";
+import ReactMarkdown from "react-markdown";
+import { useQueryClient } from "@tanstack/react-query";
+
+export default function ChatTools() {
+  const [activeId, setActiveId] = useState<number | null>(null);
+  const [inputMsg, setInputMsg] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+
+  // Queries
+  const { data: conversations, isLoading: loadingConvos } = useListOpenaiConversations();
+  const { data: activeConversation } = useGetOpenaiConversation(activeId as number, { query: { enabled: !!activeId } });
+  const { data: messages, isLoading: loadingMessages } = useListOpenaiMessages(activeId as number, { query: { enabled: !!activeId } });
+
+  // Mutations
+  const createMutation = useCreateOpenaiConversation({
+    mutation: {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries({ queryKey: ["/api/openai/conversations"] });
+        setActiveId(data.id);
+      }
+    }
+  });
+
+  const deleteMutation = useDeleteOpenaiConversation({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/openai/conversations"] });
+        if (activeId) setActiveId(null);
+      }
+    }
+  });
+
+  // Streaming Hook
+  const { sendMessage, isStreaming, streamedContent } = useChatStream({
+    conversationId: activeId as number,
+    onFinished: () => {
+      // Invalidation handled in hook, just scroll
+      scrollToBottom();
+    }
+  });
+
+  const handleCreate = () => {
+    createMutation.mutate({ data: { title: `New Chat ${format(new Date(), "MMM d, HH:mm")}` } });
+  };
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputMsg.trim() || !activeId || isStreaming) return;
+    sendMessage(inputMsg);
+    setInputMsg("");
+  };
+
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, streamedContent]);
+
+  return (
+    <AppLayout>
+      <div className="flex h-full w-full relative pt-16 md:pt-0">
+        
+        {/* Chat Sidebar */}
+        <div className="w-80 border-r border-white/5 bg-background/50 flex flex-col hidden md:flex h-full backdrop-blur-md">
+          <div className="p-4 border-b border-white/5">
+            <Button 
+              onClick={handleCreate} 
+              className="w-full justify-start gap-2 bg-primary/10 text-primary hover:bg-primary/20 hover-elevate border border-primary/20"
+              disabled={createMutation.isPending}
+            >
+              {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              New Conversation
+            </Button>
+          </div>
+          <ScrollArea className="flex-1">
+            <div className="p-3 gap-1 flex flex-col">
+              {loadingConvos ? (
+                <div className="p-4 text-center text-muted-foreground text-sm">Loading history...</div>
+              ) : conversations?.length === 0 ? (
+                <div className="p-4 text-center text-muted-foreground text-sm">No conversations yet</div>
+              ) : (
+                conversations?.map((c) => (
+                  <div 
+                    key={c.id} 
+                    onClick={() => setActiveId(c.id)}
+                    className={`
+                      group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all
+                      ${activeId === c.id ? 'bg-white/10 shadow-sm' : 'hover:bg-white/5 text-muted-foreground hover:text-foreground'}
+                    `}
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <MessageSquare className="w-4 h-4 shrink-0 opacity-50" />
+                      <div className="flex flex-col truncate">
+                        <span className="text-sm font-medium truncate">{c.title}</span>
+                        <span className="text-xs opacity-50">{format(new Date(c.createdAt), "MMM d")}</span>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="opacity-0 group-hover:opacity-100 h-7 w-7 text-muted-foreground hover:text-destructive transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteMutation.mutate({ id: c.id });
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-950/20 via-background to-background relative">
+          {!activeId ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+              <div className="w-20 h-20 mb-6 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border border-white/5 shadow-glow">
+                <Bot className="w-10 h-10 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold font-display mb-2">Welcome to AI Chat</h2>
+              <p className="text-muted-foreground mb-8 max-w-md">Start a new conversation to brainstorm, code, or ask questions with our advanced AI model.</p>
+              <Button onClick={handleCreate} size="lg" className="rounded-full px-8 shadow-lg shadow-primary/20 hover-elevate">
+                Start Chatting
+              </Button>
+            </div>
+          ) : (
+            <>
+              {/* Header */}
+              <div className="h-16 border-b border-white/5 flex items-center px-6 bg-background/40 backdrop-blur-md shrink-0">
+                <h3 className="font-semibold text-foreground/90">{activeConversation?.title || "Loading..."}</h3>
+              </div>
+
+              {/* Messages */}
+              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 scroll-smooth">
+                {loadingMessages ? (
+                  <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+                ) : (<>
+                    {messages?.map((msg) => (
+                      <div key={msg.id} className={`flex gap-4 max-w-4xl mx-auto ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        {msg.role === 'assistant' && (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 shadow-sm">
+                            <Bot className="w-4 h-4 text-white" />
+                          </div>
+                        )}
+                        <div className={`
+                          px-5 py-4 rounded-2xl max-w-[85%] text-sm leading-relaxed shadow-sm
+                          ${msg.role === 'user' 
+                            ? 'bg-white/10 text-foreground rounded-tr-sm border border-white/5' 
+                            : 'bg-card border border-white/5 text-foreground/90 rounded-tl-sm prose prose-invert prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10 max-w-full'
+                          }
+                        `}>
+                          {msg.role === 'user' ? (
+                            msg.content
+                          ) : (
+                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                          )}
+                        </div>
+                        {msg.role === 'user' && (
+                          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/5">
+                            <User className="w-4 h-4 text-white/70" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    
+                    {/* Streaming Message */}
+                    {isStreaming && streamedContent && (
+                      <div className="flex gap-4 max-w-4xl mx-auto justify-start">
+                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 shadow-glow">
+                            <Bot className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="px-5 py-4 rounded-2xl max-w-[85%] text-sm leading-relaxed bg-card border border-primary/20 text-foreground/90 rounded-tl-sm prose prose-invert max-w-full shadow-lg shadow-primary/5">
+                            <ReactMarkdown>{streamedContent}</ReactMarkdown>
+                            <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse align-middle" />
+                          </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Input Area */}
+              <div className="p-4 md:p-6 bg-background/80 backdrop-blur-xl border-t border-white/5 shrink-0">
+                <form onSubmit={handleSend} className="max-w-4xl mx-auto relative flex items-end gap-3">
+                  <div className="relative flex-1">
+                    <Input 
+                      value={inputMsg}
+                      onChange={(e) => setInputMsg(e.target.value)}
+                      placeholder="Message the assistant..."
+                      disabled={isStreaming}
+                      className="w-full bg-card border-white/10 focus-visible:ring-primary/50 focus-visible:border-primary pr-12 rounded-xl h-14 text-base shadow-inner"
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    size="icon" 
+                    disabled={!inputMsg.trim() || isStreaming}
+                    className="h-14 w-14 rounded-xl shadow-lg shadow-primary/20 shrink-0 hover-elevate transition-all"
+                  >
+                    {isStreaming ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-1" />}
+                  </Button>
+                </form>
+                <div className="text-center mt-3 text-xs text-muted-foreground">
+                  AI can make mistakes. Consider verifying important information.
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </AppLayout>
+  );
+}
+
+
+============================================================
+FILE: artifacts/ai-tools-suite/src/pages/image-generator.tsx
+============================================================
+
+import { useState } from "react";
+import { AppLayout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useGenerateOpenaiImage } from "@workspace/api-client-react";
+import { Loader2, Wand2, Download, Image as ImageIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+
+type ImageSize = "1024x1024" | "512x512" | "256x256";
+
+interface HistoryItem {
+  prompt: string;
+  b64_json: string;
+  size: string;
+}
+
+export default function ImageGenerator() {
+  const [prompt, setPrompt] = useState("");
+  const [size, setSize] = useState<ImageSize>("1024x1024");
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const { toast } = useToast();
+
+  const generateMutation = useGenerateOpenaiImage({
+    mutation: {
+      onSuccess: (data) => {
+        setHistory(prev => [{ prompt, b64_json: data.b64_json, size }, ...prev]);
+        toast({ title: "Image generated successfully!" });
+      },
+      onError: (error) => {
+        toast({ 
+          title: "Generation failed", 
+          description: error instanceof Error ? error.message : "Please try again later.",
+          variant: "destructive"
+        });
+      }
+    }
+  });
+
+  const handleGenerate = () => {
+    if (!prompt.trim()) return;
+    generateMutation.mutate({ data: { prompt, size } });
+  };
+
+  const handleDownload = (b64: string) => {
+    const a = document.createElement("a");
+    a.href = `data:image/png;base64,${b64}`;
+    a.download = `ai-generated-${Date.now()}.png`;
+    a.click();
+  };
+
+  return (
+    <AppLayout>
+      <div className="h-full w-full overflow-y-auto pt-20 md:pt-8 px-4 md:px-8 pb-12 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-fuchsia-950/20 via-background to-background">
+        <div className="max-w-6xl mx-auto space-y-12">
+          
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold font-display tracking-tight mb-3">
+                Image <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-fuchsia-500">Studio</span>
+              </h1>
+              <p className="text-muted-foreground text-lg max-w-xl">Describe your vision in detail and let AI bring it to life instantly.</p>
+            </div>
+            
+            <div className="hidden md:flex w-24 h-24 rounded-2xl bg-card border border-white/5 shadow-2xl items-center justify-center p-1">
+               <img src={`${import.meta.env.BASE_URL}images/ai-image-icon.png`} alt="Icon" className="w-full h-full rounded-xl object-cover mix-blend-screen" />
+            </div>
+          </div>
+
+          {/* Generator Controls */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-4 space-y-6">
+              <div className="glass-panel rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-10 -mt-10" />
+                
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <Wand2 className="w-5 h-5 text-primary" /> Configuration
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-2 block">Prompt Description</label>
+                    <Textarea 
+                      placeholder="A futuristic cyber-city at sunset, highly detailed, 8k resolution, cinematic lighting..." 
+                      className="min-h-[160px] bg-black/40 border-white/10 resize-none focus-visible:ring-primary/50 text-base"
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-2 block">Dimensions</label>
+                    <Select value={size} onValueChange={(v: ImageSize) => setSize(v)}>
+                      <SelectTrigger className="w-full bg-black/40 border-white/10">
+                        <SelectValue placeholder="Select size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1024x1024">High Res (1024x1024)</SelectItem>
+                        <SelectItem value="512x512">Medium (512x512)</SelectItem>
+                        <SelectItem value="256x256">Fast/Small (256x256)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Button 
+                    className="w-full h-12 mt-4 shadow-lg shadow-primary/25 hover-elevate font-semibold text-base"
+                    onClick={handleGenerate}
+                    disabled={generateMutation.isPending || !prompt.trim()}
+                  >
+                    {generateMutation.isPending ? (
+                      <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Generating...</>
+                    ) : (
+                      <><SparklesIcon className="w-5 h-5 mr-2" /> Generate Image</>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Results / Active Generation */}
+            <div className="lg:col-span-8">
+              <div className="glass-panel rounded-3xl min-h-[400px] h-full flex flex-col items-center justify-center p-8 relative overflow-hidden shadow-2xl">
+                
+                <AnimatePresence mode="wait">
+                  {generateMutation.isPending ? (
+                    <motion.div 
+                      key="loading"
+                      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                      className="flex flex-col items-center text-center max-w-sm"
+                    >
+                      <div className="relative w-24 h-24 mb-6">
+                        <div className="absolute inset-0 border-4 border-primary/30 rounded-full border-t-primary animate-spin" />
+                        <div className="absolute inset-2 border-4 border-accent/30 rounded-full border-b-accent animate-spin-reverse" />
+                        <ImageIcon className="absolute inset-0 m-auto w-8 h-8 text-primary opacity-50" />
+                      </div>
+                      <h3 className="text-xl font-display font-semibold mb-2">Creating your masterpiece</h3>
+                      <p className="text-muted-foreground text-sm">This usually takes 10-20 seconds depending on complexity and server load.</p>
+                    </motion.div>
+                  ) : history.length > 0 ? (
+                    <motion.div 
+                      key="result"
+                      initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                      className="w-full flex flex-col items-center"
+                    >
+                      <div className="relative group w-full max-w-2xl rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(168,85,247,0.15)] ring-1 ring-white/10">
+                        <img 
+                          src={`data:image/png;base64,${history[0].b64_json}`} 
+                          alt="Generated AI Art" 
+                          className="w-full h-auto object-contain bg-black/50"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+                          <Button 
+                            variant="secondary" 
+                            className="bg-white/20 hover:bg-white/30 backdrop-blur-md border-white/10 text-white"
+                            onClick={() => handleDownload(history[0].b64_json)}
+                          >
+                            <Download className="w-4 h-4 mr-2" /> Download HQ
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="mt-6 w-full max-w-2xl bg-black/30 rounded-xl p-4 border border-white/5">
+                        <p className="text-sm text-foreground/80 leading-relaxed italic">"{history[0].prompt}"</p>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div 
+                      key="empty"
+                      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                      className="text-center opacity-40"
+                    >
+                      <ImageIcon className="w-20 h-20 mx-auto mb-4" />
+                      <p className="font-medium text-lg">No images generated yet</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+
+          {/* History Gallery */}
+          {history.length > 1 && (
+            <div className="pt-12 border-t border-white/5">
+              <h3 className="text-2xl font-display font-semibold mb-6">Session History</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {history.slice(1).map((item, idx) => (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    key={idx} 
+                    className="group relative aspect-square rounded-xl overflow-hidden bg-card border border-white/5 cursor-pointer"
+                  >
+                    <img src={`data:image/png;base64,${item.b64_json}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="History" />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4 text-center">
+                      <Button size="icon" variant="ghost" className="rounded-full bg-white/20 hover:bg-white/40 text-white" onClick={() => handleDownload(item.b64_json)}>
+                        <Download className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+
+  </div></div>
+    </AppLayout>
+  );
+}
+
+function SparklesIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+      <path d="M5 3v4"/>
+      <path d="M19 17v4"/>
+      <path d="M3 5h4"/>
+      <path d="M17 19h4"/>
+    </svg>
+  )
+}
+
+
+============================================================
+FILE: artifacts/ai-tools-suite/src/pages/resume-maker.tsx
+============================================================
+
+import { useState } from "react";
+import { AppLayout } from "@/components/layout";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useGenerateResume } from "@workspace/api-client-react";
+import { Loader2, FileText, Download, Copy, CheckCircle2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+
+const formSchema = z.object({
+  fullName: z.string().min(2, "Name is required"),
+  email: z.string().email("Valid email required"),
+  phone: z.string().optional(),
+  location: z.string().optional(),
+  targetRole: z.string().min(2, "Target role is required"),
+  summary: z.string().optional(),
+  experience: z.string().min(10, "Please provide some experience details"),
+  education: z.string().optional(),
+  skills: z.string().optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+export default function ResumeMaker() {
+  const { toast } = useToast();
+  const [resumeResult, setResumeResult] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      fullName: "", email: "", phone: "", location: "", targetRole: "",
+      summary: "", experience: "", education: "", skills: "",
+    }
+  });
+
+  const generateMutation = useGenerateResume({
+    mutation: {
+      onSuccess: (data) => {
+        setResumeResult(data.resumeText);
+        toast({ title: "Resume Generated Successfully!" });
+        // Scroll to top of preview on mobile
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+      onError: (err) => {
+        toast({ title: "Failed to generate", description: err.message, variant: "destructive" });
+      }
+    }
+  });
+
+  const onSubmit = (data: FormValues) => {
+    generateMutation.mutate({ data });
+  };
+
+  const handleCopy = () => {
+    if (resumeResult) {
+      navigator.clipboard.writeText(resumeResult);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast({ title: "Copied to clipboard" });
+    }
+  };
+
+  const handleDownloadText = () => {
+    if (resumeResult) {
+      const blob = new Blob([resumeResult], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Resume_${form.getValues('fullName').replace(/\s+/g, '_')}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  return (
+    <AppLayout>
+      <div className="h-full w-full overflow-y-auto pt-20 md:pt-6 px-4 md:px-8 pb-12 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-950/20 via-background to-background">
+        <div className="max-w-7xl mx-auto">
+          
+          <div className="mb-10 text-center md:text-left flex items-center gap-6">
+             <div className="hidden md:flex w-20 h-20 rounded-2xl bg-card border border-white/5 shadow-xl items-center justify-center p-1 shrink-0">
+               <img src={`${import.meta.env.BASE_URL}images/ai-resume-icon.png`} alt="Icon" className="w-full h-full rounded-xl object-cover mix-blend-screen" />
+            </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold font-display tracking-tight mb-2">
+                Resume <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500">Architect</span>
+              </h1>
+              <p className="text-muted-foreground text-base max-w-2xl">
+                Input your raw details, and our AI will synthesize an ATS-optimized, professionally formatted resume tailored to your target role.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            
+            {/* Input Form */}
+            <div className="glass-panel rounded-3xl p-6 md:p-8 shadow-2xl order-2 lg:order-1 border-white/5">
+              <h3 className="font-semibold text-xl mb-6 border-b border-white/10 pb-4 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-emerald-400" /> Professional Profile
+              </h3>
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <FormField control={form.control} name="fullName" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-muted-foreground">Full Name *</FormLabel>
+                        <FormControl><Input placeholder="Jane Doe" className="bg-black/30 border-white/10" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="email" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-muted-foreground">Email *</FormLabel>
+                        <FormControl><Input type="email" placeholder="jane@example.com" className="bg-black/30 border-white/10" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="phone" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-muted-foreground">Phone</FormLabel>
+                        <FormControl><Input placeholder="+1 (555) 000-0000" className="bg-black/30 border-white/10" {...field} /></FormControl>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="location" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-muted-foreground">Location</FormLabel>
+                        <FormControl><Input placeholder="City, State" className="bg-black/30 border-white/10" {...field} /></FormControl>
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  <FormField control={form.control} name="targetRole" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground text-emerald-400">Target Role / Job Title *</FormLabel>
+                      <FormControl><Input placeholder="e.g. Senior Frontend Engineer" className="bg-emerald-950/20 border-emerald-500/30 focus-visible:ring-emerald-500/50 text-foreground font-medium" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="skills" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Core Skills (comma separated)</FormLabel>
+                      <FormControl><Input placeholder="React, TypeScript, Node.js, Leadership..." className="bg-black/30 border-white/10" {...field} /></FormControl>
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="experience" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Work Experience *</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Paste your rough work history here. Include companies, dates, and bullet points of what you did. The AI will format and enhance it." 
+                          className="min-h-[150px] bg-black/30 border-white/10 resize-y" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="education" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">Education</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Degrees, Universities, Graduation Years" className="min-h-[80px] bg-black/30 border-white/10 resize-y" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )} />
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-14 text-base font-semibold bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover-elevate border-0 mt-8"
+                    disabled={generateMutation.isPending}
+                  >
+                    {generateMutation.isPending ? (
+                      <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Synthesizing Profile...</>
+                    ) : (
+                      <><FileText className="w-5 h-5 mr-2" /> Generate ATS Resume</>
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </div>
+
+            {/* Preview Panel */}
+            <div className="order-1 lg:order-2 sticky top-6">
+              <AnimatePresence mode="wait">
+                {resumeResult ? (
+                  <motion.div 
+                    key="result"
+                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                    className="bg-white text-black rounded-xl overflow-hidden shadow-2xl border border-white/20 flex flex-col max-h-[85vh]"
+                  >
+                    <div className="bg-slate-100 border-b border-slate-200 p-4 flex items-center justify-between shrink-0">
+                      <div className="flex gap-2">
+                        <div className="w-3 h-3 rounded-full bg-red-400" />
+                        <div className="w-3 h-3 rounded-full bg-amber-400" />
+                        <div className="w-3 h-3 rounded-full bg-green-400" />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={handleCopy} className="bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:text-slate-900">
+                          {copied ? <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" /> : <Copy className="w-4 h-4 mr-2" />}
+                          Copy Markdown
+                        </Button>
+                        <Button size="sm" onClick={handleDownloadText} className="bg-slate-900 hover:bg-slate-800 text-white">
+                          <Download className="w-4 h-4 mr-2" /> Download .md
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="p-8 overflow-y-auto prose prose-sm md:prose-base max-w-none text-slate-800 bg-white">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {resumeResult}
+                      </ReactMarkdown>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    key="empty"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    className="glass-panel rounded-3xl h-[600px] flex flex-col items-center justify-center p-8 text-center text-muted-foreground border-dashed border-2 border-white/10"
+                  >
+                    {generateMutation.isPending ? (
+                      <>
+                        <div className="relative w-20 h-20 mb-6">
+                          <Loader2 className="w-full h-full text-emerald-500 animate-spin opacity-50" />
+                          <FileText className="absolute inset-0 m-auto w-8 h-8 text-emerald-400" />
+                        </div>
+                        <h3 className="text-xl font-display text-foreground mb-2">Analyzing your experience...</h3>
+                        <p className="max-w-xs text-sm">Our AI is restructuring your input into a high-impact professional format.</p>
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="w-16 h-16 mb-4 opacity-20" />
+                        <h3 className="text-xl font-display text-foreground/80 mb-2">Preview Generation</h3>
+                        <p className="max-w-xs text-sm">Fill out the form and click generate to see your professionally formatted resume here.</p>
+                      </>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </AppLayout>
+  );
+}
+
+
+============================================================
+FILE: artifacts/ai-tools-suite/src/pages/not-found.tsx
+============================================================
+
+import { Card, CardContent } from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
+
+export default function NotFound() {
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
+      <Card className="w-full max-w-md mx-4">
+        <CardContent className="pt-6">
+          <div className="flex mb-4 gap-2">
+            <AlertCircle className="h-8 w-8 text-red-500" />
+            <h1 className="text-2xl font-bold text-gray-900">404 Page Not Found</h1>
+          </div>
+
+          <p className="mt-4 text-sm text-gray-600">
+            Did you forget to add the page to the router?
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+            
